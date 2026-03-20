@@ -84,12 +84,26 @@ def load_config(
                 env_values,
                 'APP_OTEL_SERVICE_NAME',
             ),
-            exporter_endpoint=_yaml_or_env_str(
+            logs_endpoint=_yaml_or_env_str(
                 otel_section,
-                'exporter_endpoint',
-                'otel.exporter_endpoint',
+                'logs_endpoint',
+                'otel.logs_endpoint',
                 env_values,
-                'APP_OTEL_EXPORTER_ENDPOINT',
+                'APP_OTEL_LOGS_ENDPOINT',
+            ),
+            metrics_endpoint=_yaml_or_env_str(
+                otel_section,
+                'metrics_endpoint',
+                'otel.metrics_endpoint',
+                env_values,
+                'APP_OTEL_METRICS_ENDPOINT',
+            ),
+            traces_endpoint=_yaml_or_env_str(
+                otel_section,
+                'traces_endpoint',
+                'otel.traces_endpoint',
+                env_values,
+                'APP_OTEL_TRACES_ENDPOINT',
             ),
             metric_export_interval=_yaml_or_env_int(
                 otel_section,

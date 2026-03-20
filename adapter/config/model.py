@@ -22,7 +22,9 @@ class LoggingConfig:
 @dataclass(frozen=True, slots=True)
 class OtelConfig:
     service_name: str
-    exporter_endpoint: str
+    logs_endpoint: str
+    metrics_endpoint: str
+    traces_endpoint: str
     metric_export_interval: int
 
 
