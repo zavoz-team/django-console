@@ -19,11 +19,13 @@ async def app_lifespan(app: FastAPI) -> AsyncIterator[None]:
     setattr(app.state, APP_CONTAINER_STATE, container)
 
     try:
-        FastAPIInstrumentor.instrument_app(
-            app,
-            tracer_provider=container.observability.tracer_provider,
-        )
-        instrumented = True
+        tracer_provider = container.observability.tracer_provider
+        if tracer_provider is not None:
+            FastAPIInstrumentor.instrument_app(
+                app,
+                tracer_provider=tracer_provider,
+            )
+            instrumented = True
         yield
     finally:
         if instrumented:

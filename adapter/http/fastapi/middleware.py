@@ -1,5 +1,6 @@
 from time import perf_counter
 
+from adapter.config.model import AppConfig
 from adapter.http.fastapi.dependencies import get_container
 from fastapi import FastAPI, Request, Response
 
@@ -7,7 +8,7 @@ REQUEST_COUNT = 'http.server.request.count'
 REQUEST_DURATION = 'http.server.request.duration'
 
 
-def register_middleware(app: FastAPI) -> None:
+def register_middleware(app: FastAPI, config: AppConfig) -> None:
     @app.middleware('http')
     async def request_logging_middleware(
         request: Request,
@@ -33,6 +34,9 @@ def register_middleware(app: FastAPI) -> None:
                 },
             )
 
+    if not config.metrics.enabled:
+        return
+
     @app.middleware('http')
     async def metrics_middleware(
         request: Request,
@@ -48,9 +52,11 @@ def register_middleware(app: FastAPI) -> None:
         finally:
             duration_ms = (perf_counter() - start) * 1000
             container = get_container(request)
+            route = request.scope.get('route')
+            path = getattr(route, 'path', None)
             attrs: dict[str, str | int] = {
                 'http.method': request.method,
-                'http.path': _metric_path(request),
+                'http.path': path if isinstance(path, str) and path else 'unmatched',
                 'http.status_code': status_code,
             }
             container.observability.metrics.increment(REQUEST_COUNT, attrs=attrs)
@@ -59,11 +65,3 @@ def register_middleware(app: FastAPI) -> None:
                 duration_ms,
                 attrs=attrs,
             )
-
-
-def _metric_path(request: Request) -> str:
-    route = request.scope.get('route')
-    path = getattr(route, 'path', None)
-    if isinstance(path, str) and path:
-        return path
-    return 'unmatched'

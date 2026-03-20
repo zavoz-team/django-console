@@ -4,7 +4,8 @@ from pathlib import Path
 
 from adapter.config.loader import load_config
 from adapter.config.model import AppConfig
-from adapter.otel.bootstrap import OtelRuntime, setup_otel
+from adapter.observability.factory import build_observability
+from adapter.observability.runtime import ObservabilityRuntime
 from repository.user import InMemoryUserRepository
 from usecase.user import GetUser
 
@@ -22,7 +23,7 @@ class AppUsecases:
 @dataclass(slots=True)
 class AppContainer:
     config: AppConfig
-    observability: OtelRuntime
+    observability: ObservabilityRuntime
     repositories: AppRepositories
     usecases: AppUsecases
     _is_shutdown: bool = field(default=False, init=False, repr=False)
@@ -51,7 +52,7 @@ def build_container(
             environ=environ,
         )
 
-    observability = setup_otel(app_config)
+    observability = build_observability(app_config)
 
     user_repository = InMemoryUserRepository()
     repositories = AppRepositories(user=user_repository)
