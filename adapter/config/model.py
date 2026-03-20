@@ -16,6 +16,19 @@ class HttpConfig:
 @dataclass(frozen=True, slots=True)
 class LoggingConfig:
     level: str
+    output: str
+    format: str
+    file_path: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class MetricsConfig:
+    enabled: bool
+
+
+@dataclass(frozen=True, slots=True)
+class TracingConfig:
+    enabled: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -39,5 +52,7 @@ class AppConfig:
     app: AppSectionConfig
     http: HttpConfig
     logging: LoggingConfig
+    metrics: MetricsConfig
+    tracing: TracingConfig
     otel: OtelConfig
     security: SecurityConfig

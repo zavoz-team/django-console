@@ -8,6 +8,14 @@ http:
 
 logging:
   level: INFO
+  output: stdout
+  format: text
+
+metrics:
+  enabled: true
+
+tracing:
+  enabled: true
 
 otel:
   service_name: web-python-skelet

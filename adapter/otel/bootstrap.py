@@ -20,21 +20,33 @@ from .tracing import OtelTracer
 
 @dataclass(frozen=True, slots=True)
 class OtelRuntime:
-    logger_provider: LoggerProvider
-    meter_provider: MeterProvider
-    tracer_provider: TracerProvider
-    logger: OtelLogger
-    metrics: OtelMetrics
-    tracer: OtelTracer
+    logger_provider: LoggerProvider | None = None
+    meter_provider: MeterProvider | None = None
+    tracer_provider: TracerProvider | None = None
+    logger: OtelLogger | None = None
+    metrics: OtelMetrics | None = None
+    tracer: OtelTracer | None = None
 
     def shutdown(self) -> None:
-        self.meter_provider.shutdown()
-        self.tracer_provider.shutdown()
-        self.logger_provider.shutdown()
+        if self.meter_provider is not None:
+            self.meter_provider.shutdown()
+        if self.tracer_provider is not None:
+            self.tracer_provider.shutdown()
+        if self.logger_provider is not None:
+            self.logger_provider.shutdown()
 
 
-def setup_otel(config: AppConfig) -> OtelRuntime:
-    if config.otel.metric_export_interval <= 0:
+def setup_otel(
+    config: AppConfig,
+    *,
+    enable_logs: bool,
+    enable_metrics: bool,
+    enable_tracing: bool,
+) -> OtelRuntime:
+    if not any((enable_logs, enable_metrics, enable_tracing)):
+        raise ValueError('empty otel runtime')
+
+    if enable_metrics and config.otel.metric_export_interval <= 0:
         raise ValueError('invalid metric export interval')
 
     resource = Resource.create(
@@ -44,30 +56,41 @@ def setup_otel(config: AppConfig) -> OtelRuntime:
         }
     )
 
-    logger_provider = LoggerProvider(resource=resource, shutdown_on_exit=False)
-    logger_provider.add_log_record_processor(
-        BatchLogRecordProcessor(OTLPLogExporter(endpoint=config.otel.logs_endpoint))
-    )
-
-    metric_reader = PeriodicExportingMetricReader(
-        OTLPMetricExporter(endpoint=config.otel.metrics_endpoint),
-        export_interval_millis=config.otel.metric_export_interval,
-    )
-    meter_provider = MeterProvider(
-        metric_readers=[metric_reader],
-        resource=resource,
-        shutdown_on_exit=False,
-    )
-
-    tracer_provider = TracerProvider(resource=resource, shutdown_on_exit=False)
-    tracer_provider.add_span_processor(
-        BatchSpanProcessor(OTLPSpanExporter(endpoint=config.otel.traces_endpoint))
-    )
-
     scope_name = config.app.name
-    logger = OtelLogger(logger_provider.get_logger(scope_name), config.logging.level)
-    metrics_adapter = OtelMetrics(meter_provider.get_meter(scope_name))
-    tracer = OtelTracer(tracer_provider.get_tracer(scope_name))
+    logger_provider = None
+    meter_provider = None
+    tracer_provider = None
+    logger = None
+    metrics_adapter = None
+    tracer = None
+
+    if enable_logs:
+        logger_provider = LoggerProvider(resource=resource, shutdown_on_exit=False)
+        logger_provider.add_log_record_processor(
+            BatchLogRecordProcessor(OTLPLogExporter(endpoint=config.otel.logs_endpoint))
+        )
+        logger = OtelLogger(
+            logger_provider.get_logger(scope_name), config.logging.level
+        )
+
+    if enable_metrics:
+        metric_reader = PeriodicExportingMetricReader(
+            OTLPMetricExporter(endpoint=config.otel.metrics_endpoint),
+            export_interval_millis=config.otel.metric_export_interval,
+        )
+        meter_provider = MeterProvider(
+            metric_readers=[metric_reader],
+            resource=resource,
+            shutdown_on_exit=False,
+        )
+        metrics_adapter = OtelMetrics(meter_provider.get_meter(scope_name))
+
+    if enable_tracing:
+        tracer_provider = TracerProvider(resource=resource, shutdown_on_exit=False)
+        tracer_provider.add_span_processor(
+            BatchSpanProcessor(OTLPSpanExporter(endpoint=config.otel.traces_endpoint))
+        )
+        tracer = OtelTracer(tracer_provider.get_tracer(scope_name))
 
     return OtelRuntime(
         logger_provider=logger_provider,
