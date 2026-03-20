@@ -1,0 +1,32 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: run
+    depends_on:
+      - otel-collector
+    environment:
+      APP_API_TOKEN: ${APP_API_TOKEN:?APP_API_TOKEN is required}
+      APP_SIGNING_KEY: ${APP_SIGNING_KEY:?APP_SIGNING_KEY is required}
+      APP_ENV: docker
+      APP_HTTP_HOST: 0.0.0.0
+      APP_HTTP_PORT: '8123'
+      APP_LOGGING_OUTPUT: otel
+      APP_METRICS_ENABLED: 'true'
+      APP_TRACING_ENABLED: 'true'
+      APP_OTEL_LOGS_ENDPOINT: http://otel-collector:4318/v1/logs
+      APP_OTEL_METRICS_ENDPOINT: http://otel-collector:4318/v1/metrics
+      APP_OTEL_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
+    ports:
+      - '127.0.0.1:8123:8123'
+
+  otel-collector:
+    image: grafana/otel-lgtm:latest
+    ports:
+      - '127.0.0.1:3000:3000'
+    volumes:
+      - lgtm-data:/data
+
+volumes:
+  lgtm-data:
