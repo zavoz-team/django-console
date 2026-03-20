@@ -59,13 +59,6 @@ def load_config(
                 env_values,
                 'APP_HTTP_PORT',
             ),
-            api_prefix=_yaml_or_env_str(
-                http_section,
-                'api_prefix',
-                'http.api_prefix',
-                env_values,
-                'APP_HTTP_API_PREFIX',
-            ),
         ),
         logging=LoggingConfig(
             level=_yaml_or_env_str(

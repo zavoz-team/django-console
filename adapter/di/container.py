@@ -41,13 +41,17 @@ def build_container(
     config_path: Path | str | None = None,
     env_path: Path | str | None = None,
     environ: Mapping[str, str] | None = None,
+    config: AppConfig | None = None,
 ) -> AppContainer:
-    config = load_config(
-        config_path=config_path,
-        env_path=env_path,
-        environ=environ,
-    )
-    observability = setup_otel(config)
+    app_config = config
+    if app_config is None:
+        app_config = load_config(
+            config_path=config_path,
+            env_path=env_path,
+            environ=environ,
+        )
+
+    observability = setup_otel(app_config)
 
     user_repository = InMemoryUserRepository()
     repositories = AppRepositories(user=user_repository)
@@ -60,7 +64,7 @@ def build_container(
     )
 
     return AppContainer(
-        config=config,
+        config=app_config,
         observability=observability,
         repositories=repositories,
         usecases=usecases,

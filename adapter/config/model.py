@@ -11,7 +11,6 @@ class AppSectionConfig:
 class HttpConfig:
     host: str
     port: int
-    api_prefix: str
 
 
 @dataclass(frozen=True, slots=True)
