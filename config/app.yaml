@@ -4,18 +4,18 @@ app:
 
 http:
   host: 0.0.0.0
-  port: 8000
+  port: 8123
 
 logging:
   level: INFO
   output: stdout
-  format: text
+  format: json
 
 metrics:
-  enabled: true
+  enabled: false
 
 tracing:
-  enabled: true
+  enabled: false
 
 otel:
   service_name: web-python-skelet

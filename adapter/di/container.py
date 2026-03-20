@@ -6,6 +6,7 @@ from adapter.config.loader import load_config
 from adapter.config.model import AppConfig
 from adapter.observability.factory import build_observability
 from adapter.observability.runtime import ObservabilityRuntime
+from domain.user import User
 from repository.user import InMemoryUserRepository
 from usecase.user import GetUser
 
@@ -54,7 +55,9 @@ def build_container(
 
     observability = build_observability(app_config)
 
-    user_repository = InMemoryUserRepository()
+    user_repository = InMemoryUserRepository(
+        [User(id='123', email='aza@gglamer.ru', name='gglamer')]
+    )
     repositories = AppRepositories(user=user_repository)
     usecases = AppUsecases(
         get_user=GetUser(
