@@ -10,6 +10,7 @@ dependencies = [
     "opentelemetry-exporter-otlp-proto-http>=1.31.1",
     "opentelemetry-instrumentation-fastapi>=0.52b1",
     "opentelemetry-sdk>=1.31.1",
+    "python-dotenv>=1.2.2",
     "PyYAML>=6.0.2",
     "uvicorn>=0.35.0",
 ]
@@ -20,6 +21,7 @@ dev = [
     "mypy>=1.18.2",
     "pytest>=8.4.2",
     "ruff>=0.13.1",
+    "types-pyyaml>=6.0.12.20250915",
 ]
 
 [tool.pytest.ini_options]
