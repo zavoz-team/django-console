@@ -19,6 +19,7 @@ ENV PATH="/app/.venv/bin:${PATH}" \
 WORKDIR /app
 
 RUN useradd --system --create-home --shell /usr/sbin/nologin appuser
+RUN chown -R appuser:appuser /app
 
 COPY --from=build --chown=appuser:appuser /app/.venv /app/.venv
 COPY --chown=appuser:appuser adapter /app/adapter
@@ -27,9 +28,13 @@ COPY --chown=appuser:appuser domain /app/domain
 COPY --chown=appuser:appuser repository /app/repository
 COPY --chown=appuser:appuser usecase /app/usecase
 COPY --chown=appuser:appuser main.py /app/main.py
+COPY --chown=appuser:appuser manage.py /app/manage.py
+COPY --chown=appuser:appuser entrypoint.sh /app/entrypoint.sh
+
+RUN chmod +x /app/entrypoint.sh
 
 USER appuser
 
 EXPOSE 8123
 
-CMD ["python", "main.py"]
+ENTRYPOINT /app/entrypoint.sh
