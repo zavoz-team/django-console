@@ -1,5 +1,5 @@
 [project]
-name = "web-python-skelet"
+name = "django-console"
 version = "0.0.1"
 description = ""
 readme = "README.md"
