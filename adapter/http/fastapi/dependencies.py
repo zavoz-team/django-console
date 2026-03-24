@@ -1,7 +1,8 @@
 from typing import cast
 
-from adapter.di.container import AppContainer
 from fastapi import Depends, Request
+
+from adapter.di.container import AppContainer
 from usecase.user import GetUser
 
 APP_CONTAINER_STATE = 'container'

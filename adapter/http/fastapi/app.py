@@ -1,5 +1,6 @@
 from collections.abc import Callable
 
+from fastapi import FastAPI
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from adapter.config.loader import load_config
@@ -8,7 +9,6 @@ from adapter.di.container import AppContainer, build_container
 from adapter.http.fastapi.dependencies import APP_CONFIG_STATE, APP_CONTAINER_STATE
 from adapter.http.fastapi.middleware import register_middleware
 from adapter.http.fastapi.routers.v1.router import router as v1_router
-from fastapi import FastAPI
 
 API_V1_PREFIX = '/api/v1'
 

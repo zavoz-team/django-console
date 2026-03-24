@@ -14,6 +14,16 @@ class HttpConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class DatabaseConfig:
+    engine: str
+    name: str
+    host: str | None
+    port: int | None
+    user: str | None
+    password: str | None
+
+
+@dataclass(frozen=True, slots=True)
 class LoggingConfig:
     level: str
     output: str
@@ -51,6 +61,7 @@ class SecurityConfig:
 class AppConfig:
     app: AppSectionConfig
     http: HttpConfig
+    database: DatabaseConfig
     logging: LoggingConfig
     metrics: MetricsConfig
     tracing: TracingConfig

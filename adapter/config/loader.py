@@ -8,6 +8,7 @@ from dotenv import dotenv_values
 from .model import (
     AppConfig,
     AppSectionConfig,
+    DatabaseConfig,
     HttpConfig,
     LoggingConfig,
     MetricsConfig,
@@ -35,6 +36,7 @@ def load_config(
 
     app_section = _section(yaml_data, 'app')
     http_section = _section(yaml_data, 'http')
+    database_section = _section(yaml_data, 'database')
     logging_section = _section(yaml_data, 'logging')
     metrics_section = _section(yaml_data, 'metrics')
     tracing_section = _section(yaml_data, 'tracing')
@@ -95,6 +97,47 @@ def load_config(
                 'http.port',
                 env_values,
                 'APP_HTTP_PORT',
+            ),
+        ),
+        database=DatabaseConfig(
+            engine=_yaml_or_env_choice(
+                database_section,
+                'engine',
+                'database.engine',
+                env_values,
+                {'sqlite', 'postgresql'},
+                'APP_DB_ENGINE',
+            ),
+            name=_yaml_or_env_str(
+                database_section,
+                'name',
+                'database.name',
+                env_values,
+                'APP_DB_NAME',
+            ),
+            host=_yaml_or_env_optional_str(
+                database_section,
+                'host',
+                env_values,
+                'APP_DB_HOST',
+            ),
+            port=_yaml_or_env_optional_int(
+                database_section,
+                'port',
+                env_values,
+                'APP_DB_PORT',
+            ),
+            user=_yaml_or_env_optional_str(
+                database_section,
+                'user',
+                env_values,
+                'APP_DB_USER',
+            ),
+            password=_yaml_or_env_optional_str(
+                database_section,
+                'password',
+                env_values,
+                'APP_DB_PASSWORD',
             ),
         ),
         logging=LoggingConfig(
@@ -351,6 +394,32 @@ def _yaml_or_env_choice(
     return normalized
 
 
+def _yaml_or_env_optional_str(
+    section: Mapping[str, object],
+    field_name: str,
+    env: Mapping[str, str],
+    env_name: str | None = None,
+) -> str | None:
+    if env_name is not None and env_name in env:
+        return _as_optional_str(env[env_name], env_name)
+    if field_name not in section:
+        return None
+    return _as_optional_str(section[field_name], field_name)
+
+
+def _yaml_or_env_optional_int(
+    section: Mapping[str, object],
+    field_name: str,
+    env: Mapping[str, str],
+    env_name: str | None = None,
+) -> int | None:
+    if env_name is not None and env_name in env:
+        return _as_optional_int(env[env_name], env_name)
+    if field_name not in section:
+        return None
+    return _as_optional_int(section[field_name], field_name)
+
+
 def _env_str(env: Mapping[str, str], name: str) -> str:
     if name not in env:
         raise ConfigError(f'missing {name}')
@@ -364,6 +433,18 @@ def _as_str(value: object, label: str) -> str:
     text = value.strip()
     if not text:
         raise ConfigError(f'invalid {label}')
+    return text
+
+
+def _as_optional_str(value: object, label: str) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ConfigError(f'invalid {label}')
+
+    text = value.strip()
+    if not text:
+        return None
     return text
 
 
@@ -381,6 +462,16 @@ def _as_int(value: object, label: str) -> int:
         except ValueError as exc:
             raise ConfigError(f'invalid {label}') from exc
     raise ConfigError(f'invalid {label}')
+
+
+def _as_optional_int(value: object, label: str) -> int | None:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return None
+    return _as_int(value, label)
 
 
 def _as_bool(value: object, label: str) -> bool:

@@ -1,8 +1,9 @@
 from time import perf_counter
 
+from fastapi import FastAPI, Request, Response
+
 from adapter.config.model import AppConfig
 from adapter.http.fastapi.dependencies import get_container
-from fastapi import FastAPI, Request, Response
 
 
 def register_middleware(app: FastAPI, config: AppConfig) -> None:
