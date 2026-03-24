@@ -58,7 +58,12 @@ exclude = [
     "node_modules",
     "site-packages",
     "venv",
+    "repository/django/models.py"
 ]
+
+[[tool.mypy.overrides]]
+module = ["repository.django.models"]
+ignore_errors = true
 
 [tool.ruff.lint]
 select = ["F", "N", "I", "E", "W", "PL"]

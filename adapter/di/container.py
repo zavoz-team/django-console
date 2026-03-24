@@ -6,14 +6,14 @@ from adapter.config.loader import load_config
 from adapter.config.model import AppConfig
 from adapter.observability.factory import build_observability
 from adapter.observability.runtime import ObservabilityRuntime
-from domain.user import User
-from repository.user import InMemoryUserRepository
+from repository.django.user import DjangoUserRepository
+from usecase.interface import UserRepository
 from usecase.user import GetUser
 
 
 @dataclass(frozen=True, slots=True)
 class AppRepositories:
-    user: InMemoryUserRepository
+    user: UserRepository
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,9 +55,7 @@ def build_container(
 
     observability = build_observability(app_config)
 
-    user_repository = InMemoryUserRepository(
-        observability.tracer, [User(id='123', email='aza@gglamer.ru', name='gglamer')]
-    )
+    user_repository = DjangoUserRepository(observability.tracer)
     repositories = AppRepositories(user=user_repository)
     usecases = AppUsecases(
         get_user=GetUser(

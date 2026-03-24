@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from adapter.config.model import DatabaseConfig
-from adapter.http.django.runtime import get_config
+from adapter.http.django.config import get_config
 
 BASE_DIR = Path(__file__).resolve().parents[3]
 

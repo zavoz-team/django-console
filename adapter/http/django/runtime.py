@@ -1,25 +1,17 @@
 import atexit
 from dataclasses import dataclass
 
-from adapter.config.loader import load_config
-from adapter.config.model import AppConfig
 from adapter.di.container import AppContainer, build_container
+from adapter.http.django.config import get_config
 
 
 @dataclass(slots=True)
 class RuntimeState:
-    config: AppConfig | None = None
     container: AppContainer | None = None
     is_registered: bool = False
 
 
 RUNTIME_STATE = RuntimeState()
-
-
-def get_config() -> AppConfig:
-    if RUNTIME_STATE.config is None:
-        RUNTIME_STATE.config = load_config()
-    return RUNTIME_STATE.config
 
 
 def initialize_runtime() -> AppContainer:
@@ -28,6 +20,8 @@ def initialize_runtime() -> AppContainer:
     if not RUNTIME_STATE.is_registered:
         atexit.register(shutdown_runtime)
         RUNTIME_STATE.is_registered = True
+    if RUNTIME_STATE.container is None:
+        raise RuntimeError('container unavailable')
     return RUNTIME_STATE.container
 
 

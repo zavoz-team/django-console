@@ -1,7 +1,7 @@
 import uvicorn
 
 from adapter.http.django.asgi import application
-from adapter.http.django.runtime import get_config
+from adapter.http.django.config import get_config
 
 config = get_config()
 
