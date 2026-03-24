@@ -37,5 +37,4 @@ class GetUser:
                 raise error
 
             span.set_attribute('user.email', user.email)
-            self._logger.info('user_loaded', attrs={'user_id': user.id})
             return user

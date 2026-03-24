@@ -56,7 +56,7 @@ def build_container(
     observability = build_observability(app_config)
 
     user_repository = InMemoryUserRepository(
-        [User(id='123', email='aza@gglamer.ru', name='gglamer')]
+        observability.tracer, [User(id='123', email='aza@gglamer.ru', name='gglamer')]
     )
     repositories = AppRepositories(user=user_repository)
     usecases = AppUsecases(

@@ -1,15 +1,21 @@
 from collections.abc import Iterable
 
 from domain.user import User
-from usecase.interface import UserRepository
+from usecase.interface import Tracer, UserRepository
 
 
 class InMemoryUserRepository(UserRepository):
-    def __init__(self, users: Iterable[User] | None = None) -> None:
+    def __init__(
+        self,
+        tracer: Tracer,
+        users: Iterable[User] | None = None,
+    ) -> None:
         self._users = {user.id: user for user in users or ()}
+        self._tracer = tracer
 
     def get(self, user_id: str) -> User | None:
-        return self._users.get(user_id)
+        with self._tracer.start_span('repository.user', attrs={'user.id': user_id}):
+            return self._users.get(user_id)
 
     def get_by_email(self, email: str) -> User | None:
         for user in self._users.values():
