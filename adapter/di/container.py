@@ -6,27 +6,26 @@ from adapter.config.loader import load_config
 from adapter.config.model import AppConfig
 from adapter.observability.factory import build_observability
 from adapter.observability.runtime import ObservabilityRuntime
-from repository.core_api.audit import CoreApiAuditGateway
 from repository.core_api.client import CoreApiClient
 from repository.core_api.export import CoreApiExportGateway
-from repository.core_api.job import CoreApiJobGateway
 from repository.core_api.profile import CoreApiProfileGateway
 from repository.core_api.segment import CoreApiSegmentGateway
-from repository.core_api.system_status import CoreApiSystemStatusGateway
+from repository.core_api.system import CoreApiSystemGateway
 from repository.django.audit_log import DjangoAuditLogRepository
 from repository.django.user import DjangoUserRepository
-from usecase.audit import ListAuditEntries, LogCriticalPageView, LogOperatorAction
+from usecase.audit import (
+    ListAuditEntries,
+    LogCriticalPageView,
+    LogOperatorAction,
+)
 from usecase.interface import (
-    AuditGateway,
     AuditLogRepository,
     ExportGateway,
-    JobGateway,
     ProfileGateway,
     SegmentGateway,
-    SystemStatusGateway,
+    SystemGateway,
     UserRepository,
 )
-from usecase.user import GetUser
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,14 +39,11 @@ class AppGateways:
     profile: ProfileGateway
     segment: SegmentGateway
     export: ExportGateway
-    job: JobGateway
-    system_status: SystemStatusGateway
-    audit: AuditGateway
+    system: SystemGateway
 
 
 @dataclass(frozen=True, slots=True)
 class AppUsecases:
-    get_user: GetUser
     log_operator_action: LogOperatorAction
     log_critical_page_view: LogCriticalPageView
     list_audit_entries: ListAuditEntries
@@ -90,41 +86,40 @@ def build_container(
 
     observability = build_observability(app_config)
 
-    user_repository = DjangoUserRepository(observability.tracer)
-    audit_log_repository = DjangoAuditLogRepository(observability.tracer)
+    core_api_client = CoreApiClient(
+        config=app_config.core_api, tracer=observability.tracer
+    )
+
+    user_repository = DjangoUserRepository(tracer=observability.tracer)
+    audit_log_repository = DjangoAuditLogRepository(tracer=observability.tracer)
+
     repositories = AppRepositories(
         user=user_repository,
         audit_log=audit_log_repository,
-    )
-    log_operator_action = LogOperatorAction(
-        repository=audit_log_repository,
-        logger=observability.logger,
-        tracer=observability.tracer,
-    )
-    usecases = AppUsecases(
-        get_user=GetUser(
-            repository=user_repository,
-            logger=observability.logger,
-            tracer=observability.tracer,
-        ),
-        log_operator_action=log_operator_action,
-        log_critical_page_view=LogCriticalPageView(log_operator_action),
-        list_audit_entries=ListAuditEntries(
-            repository=audit_log_repository,
-            tracer=observability.tracer,
-        ),
-    )
-    core_api_client = CoreApiClient(
-        config=app_config.core_api, tracer=observability.tracer
     )
 
     gateways = AppGateways(
         profile=CoreApiProfileGateway(client=core_api_client),
         segment=CoreApiSegmentGateway(client=core_api_client),
         export=CoreApiExportGateway(client=core_api_client),
-        job=CoreApiJobGateway(client=core_api_client),
-        system_status=CoreApiSystemStatusGateway(client=core_api_client),
-        audit=CoreApiAuditGateway(client=core_api_client),
+        system=CoreApiSystemGateway(client=core_api_client),
+    )
+
+    log_operator_action = LogOperatorAction(
+        repository=audit_log_repository,
+        logger=observability.logger,
+        tracer=observability.tracer,
+    )
+
+    usecases = AppUsecases(
+        log_operator_action=log_operator_action,
+        log_critical_page_view=LogCriticalPageView(
+            log_operator_action=log_operator_action
+        ),
+        list_audit_entries=ListAuditEntries(
+            repository=audit_log_repository,
+            tracer=observability.tracer,
+        ),
     )
 
     return AppContainer(
