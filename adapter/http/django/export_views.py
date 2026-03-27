@@ -34,5 +34,4 @@ def exports_create_page(request: HttpRequest) -> HttpResponse:
         errors=[],
         form=form,
     )
-    status = 200
-    return render(request, 'backoffice/export_create.html', context, status=status)
+    return render(request, 'backoffice/export_create.html', context, status=200)
