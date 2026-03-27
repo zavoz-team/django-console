@@ -20,6 +20,11 @@ from usecase.interface import (
 
 
 @dataclass(frozen=True, slots=True)
+class AppRepositories:
+    pass
+
+
+@dataclass(frozen=True, slots=True)
 class AppGateways:
     profile: ProfileGateway
     segment: SegmentGateway
@@ -37,6 +42,7 @@ class AppContainer:
     config: AppConfig
     observability: ObservabilityRuntime
     core_api_client: CoreApiClient
+    repositories: AppRepositories
     gateways: AppGateways
     usecases: AppUsecases
     _is_shutdown: bool = field(default=False, init=False, repr=False)
@@ -68,7 +74,11 @@ def build_container(
 
     observability = build_observability(app_config)
 
-    core_api_client = CoreApiClient(config=app_config.core_api)
+    core_api_client = CoreApiClient(
+        config=app_config.core_api, tracer=observability.tracer
+    )
+
+    repositories = AppRepositories()
 
     gateways = AppGateways(
         profile=CoreApiProfileGateway(client=core_api_client),
@@ -83,6 +93,7 @@ def build_container(
         config=app_config,
         observability=observability,
         core_api_client=core_api_client,
+        repositories=repositories,
         gateways=gateways,
         usecases=usecases,
     )
