@@ -6,19 +6,6 @@ from adapter.config.loader import load_config
 from adapter.config.model import AppConfig
 from adapter.observability.factory import build_observability
 from adapter.observability.runtime import ObservabilityRuntime
-<<<<<<< KiritoZik/10-usecase-orchestration
-from repository.django.audit_log import DjangoAuditLogRepository
-from repository.django.user import DjangoUserRepository
-from usecase.audit import ListAuditEntries, LogCriticalPageView, LogOperatorAction
-from usecase.interface import AuditLogRepository, UserRepository
-from usecase.user import GetUser
-
-
-@dataclass(frozen=True, slots=True)
-class AppRepositories:
-    user: UserRepository
-    audit_log: AuditLogRepository
-=======
 from repository.core_api.audit import CoreApiAuditGateway
 from repository.core_api.client import CoreApiClient
 from repository.core_api.export import CoreApiExportGateway
@@ -26,14 +13,26 @@ from repository.core_api.job import CoreApiJobGateway
 from repository.core_api.profile import CoreApiProfileGateway
 from repository.core_api.segment import CoreApiSegmentGateway
 from repository.core_api.system_status import CoreApiSystemStatusGateway
+from repository.django.audit_log import DjangoAuditLogRepository
+from repository.django.user import DjangoUserRepository
+from usecase.audit import ListAuditEntries, LogCriticalPageView, LogOperatorAction
 from usecase.interface import (
     AuditGateway,
+    AuditLogRepository,
     ExportGateway,
     JobGateway,
     ProfileGateway,
     SegmentGateway,
     SystemStatusGateway,
+    UserRepository,
 )
+from usecase.user import GetUser
+
+
+@dataclass(frozen=True, slots=True)
+class AppRepositories:
+    user: UserRepository
+    audit_log: AuditLogRepository
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,19 +43,14 @@ class AppGateways:
     job: JobGateway
     system_status: SystemStatusGateway
     audit: AuditGateway
->>>>>>> dev
 
 
 @dataclass(frozen=True, slots=True)
 class AppUsecases:
-<<<<<<< KiritoZik/10-usecase-orchestration
     get_user: GetUser
     log_operator_action: LogOperatorAction
     log_critical_page_view: LogCriticalPageView
     list_audit_entries: ListAuditEntries
-=======
-    pass
->>>>>>> dev
 
 
 @dataclass(slots=True)
@@ -64,6 +58,7 @@ class AppContainer:
     config: AppConfig
     observability: ObservabilityRuntime
     core_api_client: CoreApiClient
+    repositories: AppRepositories
     gateways: AppGateways
     usecases: AppUsecases
     _is_shutdown: bool = field(default=False, init=False, repr=False)
@@ -95,7 +90,6 @@ def build_container(
 
     observability = build_observability(app_config)
 
-<<<<<<< KiritoZik/10-usecase-orchestration
     user_repository = DjangoUserRepository(observability.tracer)
     audit_log_repository = DjangoAuditLogRepository(observability.tracer)
     repositories = AppRepositories(
@@ -119,7 +113,7 @@ def build_container(
             repository=audit_log_repository,
             tracer=observability.tracer,
         ),
-=======
+    )
     core_api_client = CoreApiClient(
         config=app_config.core_api, tracer=observability.tracer
     )
@@ -131,15 +125,13 @@ def build_container(
         job=CoreApiJobGateway(client=core_api_client),
         system_status=CoreApiSystemStatusGateway(client=core_api_client),
         audit=CoreApiAuditGateway(client=core_api_client),
->>>>>>> dev
     )
-
-    usecases = AppUsecases()
 
     return AppContainer(
         config=app_config,
         observability=observability,
         core_api_client=core_api_client,
+        repositories=repositories,
         gateways=gateways,
         usecases=usecases,
     )

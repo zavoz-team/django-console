@@ -17,13 +17,13 @@ class CoreApiProfileGateway(ProfileGateway):
 
     def list_profiles(self, limit: int = 50, offset: int = 0) -> Sequence[ProfileDTO]:
         response_data = self._client.get_profiles(limit=limit, offset=offset)
-        
+
         profiles = []
         if isinstance(response_data, list):
             for item in response_data:
                 core_dto = CoreApiProfileDTO(**item)
                 profiles.append(_to_profile_dto(core_dto))
-        
+
         return profiles
 
     def get_profile(self, customer_id: str) -> ProfileDTO | None:

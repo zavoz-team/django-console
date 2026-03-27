@@ -43,7 +43,7 @@ class TriggerExport:
             },
         ) as span:
             try:
-                job = self._gateway.trigger(
+                job = self._gateway.trigger_export(
                     segment_id=query.segment_id,
                     destination=query.destination,
                 )
