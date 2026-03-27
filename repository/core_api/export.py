@@ -1,3 +1,5 @@
+from domain.export_job import ExportJobSummary
+from domain.query import Pagination
 from repository.core_api.client import CoreApiClient
 from usecase.interface import ExportGateway
 
@@ -6,11 +8,18 @@ class CoreApiExportGateway(ExportGateway):
     def __init__(self, client: CoreApiClient) -> None:
         self._client = client
 
-    def trigger_export(self, segment_id: str) -> str:
+    def trigger_export(self, segment_id: str, destination: str) -> ExportJobSummary:
         response_data = self._client.trigger_export(segment_id)
+        return ExportJobSummary(**response_data)
 
-        job_id = response_data.get("job_id")
-        if not isinstance(job_id, str):
-            raise TypeError("Expected 'job_id' to be a string")
+    def list_jobs(self, pagination: Pagination) -> list[ExportJobSummary]:
+        response_data = self._client.get_jobs(
+            limit=pagination.limit, offset=pagination.offset
+        )
 
-        return job_id
+        jobs = []
+        if isinstance(response_data, list):
+            for item in response_data:
+                jobs.append(ExportJobSummary(**item))
+
+        return jobs

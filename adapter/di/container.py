@@ -6,33 +6,17 @@ from adapter.config.loader import load_config
 from adapter.config.model import AppConfig
 from adapter.observability.factory import build_observability
 from adapter.observability.runtime import ObservabilityRuntime
-from repository.core_api.audit import CoreApiAuditGateway
 from repository.core_api.client import CoreApiClient
 from repository.core_api.export import CoreApiExportGateway
-from repository.core_api.job import CoreApiJobGateway
 from repository.core_api.profile import CoreApiProfileGateway
 from repository.core_api.segment import CoreApiSegmentGateway
-from repository.core_api.system_status import CoreApiSystemStatusGateway
-from repository.django.audit_log import DjangoAuditLogRepository
-from repository.django.user import DjangoUserRepository
-from usecase.audit import ListAuditEntries, LogCriticalPageView, LogOperatorAction
+from repository.core_api.system import CoreApiSystemGateway
 from usecase.interface import (
-    AuditGateway,
-    AuditLogRepository,
     ExportGateway,
-    JobGateway,
     ProfileGateway,
     SegmentGateway,
-    SystemStatusGateway,
-    UserRepository,
+    SystemGateway,
 )
-from usecase.user import GetUser
-
-
-@dataclass(frozen=True, slots=True)
-class AppRepositories:
-    user: UserRepository
-    audit_log: AuditLogRepository
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,17 +24,12 @@ class AppGateways:
     profile: ProfileGateway
     segment: SegmentGateway
     export: ExportGateway
-    job: JobGateway
-    system_status: SystemStatusGateway
-    audit: AuditGateway
+    system: SystemGateway
 
 
 @dataclass(frozen=True, slots=True)
 class AppUsecases:
-    get_user: GetUser
-    log_operator_action: LogOperatorAction
-    log_critical_page_view: LogCriticalPageView
-    list_audit_entries: ListAuditEntries
+    pass
 
 
 @dataclass(slots=True)
@@ -58,7 +37,6 @@ class AppContainer:
     config: AppConfig
     observability: ObservabilityRuntime
     core_api_client: CoreApiClient
-    repositories: AppRepositories
     gateways: AppGateways
     usecases: AppUsecases
     _is_shutdown: bool = field(default=False, init=False, repr=False)
@@ -90,48 +68,21 @@ def build_container(
 
     observability = build_observability(app_config)
 
-    user_repository = DjangoUserRepository(observability.tracer)
-    audit_log_repository = DjangoAuditLogRepository(observability.tracer)
-    repositories = AppRepositories(
-        user=user_repository,
-        audit_log=audit_log_repository,
-    )
-    log_operator_action = LogOperatorAction(
-        repository=audit_log_repository,
-        logger=observability.logger,
-        tracer=observability.tracer,
-    )
-    usecases = AppUsecases(
-        get_user=GetUser(
-            repository=user_repository,
-            logger=observability.logger,
-            tracer=observability.tracer,
-        ),
-        log_operator_action=log_operator_action,
-        log_critical_page_view=LogCriticalPageView(log_operator_action),
-        list_audit_entries=ListAuditEntries(
-            repository=audit_log_repository,
-            tracer=observability.tracer,
-        ),
-    )
-    core_api_client = CoreApiClient(
-        config=app_config.core_api, tracer=observability.tracer
-    )
+    core_api_client = CoreApiClient(config=app_config.core_api)
 
     gateways = AppGateways(
         profile=CoreApiProfileGateway(client=core_api_client),
         segment=CoreApiSegmentGateway(client=core_api_client),
         export=CoreApiExportGateway(client=core_api_client),
-        job=CoreApiJobGateway(client=core_api_client),
-        system_status=CoreApiSystemStatusGateway(client=core_api_client),
-        audit=CoreApiAuditGateway(client=core_api_client),
+        system=CoreApiSystemGateway(client=core_api_client),
     )
+
+    usecases = AppUsecases()
 
     return AppContainer(
         config=app_config,
         observability=observability,
         core_api_client=core_api_client,
-        repositories=repositories,
         gateways=gateways,
         usecases=usecases,
     )
