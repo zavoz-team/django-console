@@ -1,3 +1,4 @@
+from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, JsonResponse
 from django.views.decorators.http import require_GET
 
@@ -18,6 +19,7 @@ def health(_: HttpRequest) -> JsonResponse:
     )
 
 
+@login_required
 @require_GET
 def get_user(_: HttpRequest, user_id: str) -> JsonResponse:
     try:
