@@ -1,0 +1,7 @@
+{% if ui_errors %}
+<ul>
+    {% for item in ui_errors %}
+    <li>{{ item.message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}

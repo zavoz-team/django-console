@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <main>
+        <h1>{{ title }}</h1>
+        {% include 'backoffice/error.html' %}
+        {% if message %}
+        <p>{{ message }}</p>
+        {% endif %}
+        {% if form %}
+        <form method="get">
+            {{ form.as_p }}
+            <button type="submit">Apply</button>
+        </form>
+        {% endif %}
+        {% if details %}
+        <dl>
+            {% for item in details %}
+            <dt>{{ item.label }}</dt>
+            <dd>{{ item.value }}</dd>
+            {% endfor %}
+        </dl>
+        {% endif %}
+    </main>
+</body>
+</html>

@@ -1,15 +1,36 @@
 from django.conf import settings
-from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import path
 
-from .views import get_user, health
+from .auth_views import login_view, logout_view
+from .audit_views import audit_page
+from .export_views import exports_create_page
+from .job_views import jobs_page
+from .profile_views import profile_page, profiles_page
+from .segment_views import segment_members_page, segments_page
+from .views import health
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
+public_urlpatterns = [
+    path('login/', login_view, name='login'),
+    path('logout/', logout_view, name='logout'),
     path('api/v1/health', health, name='health'),
-    path('api/v1/users/<str:user_id>', get_user, name='get_user'),
 ]
+
+internal_urlpatterns = [
+    path('profiles/', profiles_page, name='profiles'),
+    path('profiles/<str:customer_id>/', profile_page, name='profile'),
+    path('segments/', segments_page, name='segments'),
+    path(
+        'segments/<str:segment_id>/members/',
+        segment_members_page,
+        name='segment_members',
+    ),
+    path('jobs/', jobs_page, name='jobs'),
+    path('exports/create/', exports_create_page, name='exports_create'),
+    path('audit/', audit_page, name='audit'),
+]
+
+urlpatterns = public_urlpatterns + internal_urlpatterns
 
 if settings.DEBUG:
     urlpatterns += staticfiles_urlpatterns()
