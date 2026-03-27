@@ -74,7 +74,9 @@ def build_container(
 
     observability = build_observability(app_config)
 
-    core_api_client = CoreApiClient(config=app_config.core_api)
+    core_api_client = CoreApiClient(
+        config=app_config.core_api, tracer=observability.tracer
+    )
 
     gateways = AppGateways(
         profile=CoreApiProfileGateway(client=core_api_client),

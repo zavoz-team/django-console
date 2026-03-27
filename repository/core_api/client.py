@@ -3,7 +3,6 @@ import time
 from typing import Any, Optional
 
 import httpx
-from opentelemetry import trace
 
 from adapter.config.model import CoreApiConfig
 from repository.core_api.errors import (
@@ -14,13 +13,13 @@ from repository.core_api.errors import (
     CoreApiNotFoundError,
     CoreApiUnauthorizedError,
 )
-
-tracer = trace.get_tracer(__name__)
+from usecase.interface import Tracer
 
 
 class CoreApiClient:
-    def __init__(self, config: CoreApiConfig) -> None:
+    def __init__(self, config: CoreApiConfig, tracer: Tracer) -> None:
         self._config = config
+        self._tracer = tracer
         default_headers = {config.service_token_header: config.service_token}
         self._client = httpx.Client(
             base_url=config.base_url,
@@ -41,9 +40,9 @@ class CoreApiClient:
         span_name = f"core_api.{method.lower()}"
         full_url = f"{self._client.base_url}{path}"
 
-        with tracer.start_as_current_span(
+        with self._tracer.start_span(
             span_name,
-            attributes={
+            attrs={
                 "http.method": method,
                 "http.url": full_url,
                 "server.address": str(self._client.base_url),
@@ -66,17 +65,17 @@ class CoreApiClient:
                         return {}
                     return response.json()
                 except httpx.TimeoutException as exc:
-                    span.record_exception(exc)
+                    span.record_error(exc)
                     if attempts > (self._config.retry_attempts or 0):
                         raise CoreApiNetworkError("Request timed out") from exc
                     time.sleep((self._config.retry_backoff_ms or 0) / 1000)
                 except httpx.NetworkError as exc:
-                    span.record_exception(exc)
+                    span.record_error(exc)
                     if attempts > (self._config.retry_attempts or 0):
                         raise CoreApiNetworkError("Network error") from exc
                     time.sleep((self._config.retry_backoff_ms or 0) / 1000)
                 except httpx.HTTPStatusError as exc:
-                    span.record_exception(exc)
+                    span.record_error(exc)
                     detail = None
                     try:
                         error_json = exc.response.json()
@@ -94,10 +93,10 @@ class CoreApiClient:
                         status_code=exc.response.status_code, detail=detail
                     ) from exc
                 except json.JSONDecodeError as exc:
-                    span.record_exception(exc)
+                    span.record_error(exc)
                     raise CoreApiDataError("Invalid JSON response") from exc
                 except Exception as exc:
-                    span.record_exception(exc)
+                    span.record_error(exc)
                     raise CoreApiError(f"An unexpected error occurred: {exc}") from exc
 
     def get_profiles(
