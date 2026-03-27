@@ -6,26 +6,43 @@ from adapter.config.loader import load_config
 from adapter.config.model import AppConfig
 from adapter.observability.factory import build_observability
 from adapter.observability.runtime import ObservabilityRuntime
-from repository.django.user import DjangoUserRepository
-from usecase.interface import UserRepository
-from usecase.user import GetUser
+from repository.core_api.audit import CoreApiAuditGateway
+from repository.core_api.client import CoreApiClient
+from repository.core_api.export import CoreApiExportGateway
+from repository.core_api.job import CoreApiJobGateway
+from repository.core_api.profile import CoreApiProfileGateway
+from repository.core_api.segment import CoreApiSegmentGateway
+from repository.core_api.system_status import CoreApiSystemStatusGateway
+from usecase.interface import (
+    AuditGateway,
+    ExportGateway,
+    JobGateway,
+    ProfileGateway,
+    SegmentGateway,
+    SystemStatusGateway,
+)
 
 
 @dataclass(frozen=True, slots=True)
-class AppRepositories:
-    user: UserRepository
+class AppGateways:
+    profile: ProfileGateway
+    segment: SegmentGateway
+    export: ExportGateway
+    job: JobGateway
+    system_status: SystemStatusGateway
+    audit: AuditGateway
 
 
 @dataclass(frozen=True, slots=True)
 class AppUsecases:
-    get_user: GetUser
+    pass
 
 
 @dataclass(slots=True)
 class AppContainer:
     config: AppConfig
     observability: ObservabilityRuntime
-    repositories: AppRepositories
+    gateways: AppGateways
     usecases: AppUsecases
     _is_shutdown: bool = field(default=False, init=False, repr=False)
 
@@ -55,19 +72,22 @@ def build_container(
 
     observability = build_observability(app_config)
 
-    user_repository = DjangoUserRepository(observability.tracer)
-    repositories = AppRepositories(user=user_repository)
-    usecases = AppUsecases(
-        get_user=GetUser(
-            repository=user_repository,
-            logger=observability.logger,
-            tracer=observability.tracer,
-        )
+    core_api_client = CoreApiClient(config=app_config.core_api)
+
+    gateways = AppGateways(
+        profile=CoreApiProfileGateway(client=core_api_client),
+        segment=CoreApiSegmentGateway(client=core_api_client),
+        export=CoreApiExportGateway(client=core_api_client),
+        job=CoreApiJobGateway(client=core_api_client),
+        system_status=CoreApiSystemStatusGateway(client=core_api_client),
+        audit=CoreApiAuditGateway(client=core_api_client),
     )
+
+    usecases = AppUsecases()
 
     return AppContainer(
         config=app_config,
         observability=observability,
-        repositories=repositories,
+        gateways=gateways,
         usecases=usecases,
     )
