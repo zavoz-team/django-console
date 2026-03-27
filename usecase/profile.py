@@ -1,0 +1,69 @@
+from dataclasses import dataclass
+
+from domain.error import ProfileNotFoundError
+from domain.profile import ProfileDetails, ProfileSummary
+from domain.query import Pagination, TextQuery
+from usecase.interface import Logger, ProfileGateway, Tracer
+
+
+@dataclass(frozen=True, slots=True)
+class GetProfileQuery:
+    profile_id: str
+
+
+@dataclass(frozen=True, slots=True)
+class ListProfilesQuery:
+    pagination: Pagination
+    query: TextQuery | None = None
+
+
+class GetProfile:
+    def __init__(
+        self,
+        gateway: ProfileGateway,
+        logger: Logger,
+        tracer: Tracer,
+    ) -> None:
+        self._gateway = gateway
+        self._logger = logger
+        self._tracer = tracer
+
+    def execute(self, query: GetProfileQuery) -> ProfileDetails:
+        with self._tracer.start_span(
+            'usecase.get_profile',
+            attrs={'profile.id': query.profile_id},
+        ) as span:
+            profile = self._gateway.get(query.profile_id)
+            if profile is None:
+                error = ProfileNotFoundError(query.profile_id)
+                span.record_error(error)
+                self._logger.warning(
+                    'profile_not_found',
+                    attrs={'profile_id': query.profile_id},
+                )
+                raise error
+
+            return profile
+
+
+class ListProfiles:
+    def __init__(
+        self,
+        gateway: ProfileGateway,
+        tracer: Tracer,
+    ) -> None:
+        self._gateway = gateway
+        self._tracer = tracer
+
+    def execute(self, query: ListProfilesQuery) -> list[ProfileSummary]:
+        with self._tracer.start_span(
+            'usecase.list_profiles',
+            attrs={
+                'pagination.limit': query.pagination.limit,
+                'pagination.offset': query.pagination.offset,
+            },
+        ):
+            return self._gateway.list(
+                pagination=query.pagination,
+                query=query.query,
+            )

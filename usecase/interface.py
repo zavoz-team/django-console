@@ -2,6 +2,11 @@ from collections.abc import Mapping
 from types import TracebackType
 from typing import Protocol, TypeAlias
 
+from domain.audit import AuditEntry
+from domain.export_job import ExportJobSummary
+from domain.profile import ProfileDetails, ProfileSummary
+from domain.query import Pagination, TextQuery
+from domain.segment import SegmentMember, SegmentSummary
 from domain.user import User
 
 AttrValue: TypeAlias = str | int | float | bool
@@ -14,6 +19,42 @@ class UserRepository(Protocol):
     def get_by_email(self, email: str) -> User | None: ...
 
     def save(self, user: User) -> None: ...
+
+
+class ProfileGateway(Protocol):
+    def get(self, profile_id: str) -> ProfileDetails | None: ...
+
+    def list(
+        self,
+        pagination: Pagination,
+        query: TextQuery | None = None,
+    ) -> list[ProfileSummary]: ...
+
+
+class SegmentGateway(Protocol):
+    def list(self, pagination: Pagination) -> list[SegmentSummary]: ...
+
+    def list_members(
+        self,
+        segment_id: str,
+        pagination: Pagination,
+    ) -> list[SegmentMember] | None: ...
+
+
+class ExportGateway(Protocol):
+    def trigger(self, segment_id: str) -> ExportJobSummary: ...
+
+    def list_jobs(self, pagination: Pagination) -> list[ExportJobSummary]: ...
+
+
+class SystemGateway(Protocol):
+    def is_core_available(self) -> bool: ...
+
+
+class AuditGateway(Protocol):
+    def list_entries(self, pagination: Pagination) -> list[AuditEntry]: ...
+
+    def log_operator_action(self, entry: AuditEntry) -> None: ...
 
 
 class Logger(Protocol):
