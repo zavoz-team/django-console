@@ -1,6 +1,6 @@
 import json
 import time
-from typing import Any
+from typing import Any, Optional
 
 import httpx
 
@@ -18,23 +18,31 @@ from repository.core_api.errors import (
 class CoreApiClient:
     def __init__(self, config: CoreApiConfig) -> None:
         self._config = config
+        default_headers = {config.service_token_header: config.service_token}
         self._client = httpx.Client(
             base_url=config.base_url,
             timeout=config.timeout_seconds,
-            headers={config.service_token_header: config.service_token},
+            headers=default_headers,
         )
 
     def _request(
         self,
         method: str,
         path: str,
+        extra_headers: Optional[dict[str, str]] = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
         attempts = 0
+        request_headers = self._client.headers.copy()
+        if extra_headers:
+            request_headers.update(extra_headers)
+
         while True:
             attempts += 1
             try:
-                response = self._client.request(method, path, **kwargs)
+                response = self._client.request(
+                    method, path, headers=request_headers, **kwargs
+                )
                 response.raise_for_status()
                 if not response.content:
                     return {}
@@ -69,29 +77,81 @@ class CoreApiClient:
             except Exception as exc:
                 raise CoreApiError(f"An unexpected error occurred: {exc}") from exc
 
-    def get_profiles(self, limit: int, offset: int) -> dict[str, Any]:
-        return self._request("GET", "/api/v1/profiles", params={"limit": limit, "offset": offset})
+    def get_profiles(
+        self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]:
+        return self._request(
+            "GET",
+            "/api/v1/profiles",
+            params={"limit": limit, "offset": offset},
+            extra_headers=extra_headers,
+        )
 
-    def get_profile(self, customer_id: str) -> dict[str, Any]:
-        return self._request("GET", f"/api/v1/profiles/{customer_id}")
+    def get_profile(
+        self, customer_id: str, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]:
+        return self._request(
+            "GET", f"/api/v1/profiles/{customer_id}", extra_headers=extra_headers
+        )
 
-    def get_segments(self, limit: int, offset: int) -> dict[str, Any]:
-        return self._request("GET", "/api/v1/segments", params={"limit": limit, "offset": offset})
+    def get_segments(
+        self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]:
+        return self._request(
+            "GET",
+            "/api/v1/segments",
+            params={"limit": limit, "offset": offset},
+            extra_headers=extra_headers,
+        )
 
-    def get_segment_members(self, segment_id: str, limit: int, offset: int) -> dict[str, Any]:
-        return self._request("GET", f"/api/v1/segments/{segment_id}/members", params={"limit": limit, "offset": offset})
+    def get_segment_members(
+        self,
+        segment_id: str,
+        limit: int,
+        offset: int,
+        extra_headers: Optional[dict[str, str]] = None,
+    ) -> dict[str, Any]:
+        return self._request(
+            "GET",
+            f"/api/v1/segments/{segment_id}/members",
+            params={"limit": limit, "offset": offset},
+            extra_headers=extra_headers,
+        )
 
-    def trigger_export(self, segment_id: str) -> dict[str, Any]:
-        return self._request("POST", "/api/v1/exports", json={"segment_id": segment_id})
+    # Export methods
+    def trigger_export(
+        self, segment_id: str, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            "/api/v1/exports",
+            json={"segment_id": segment_id},
+            extra_headers=extra_headers,
+        )
 
-    def get_jobs(self, limit: int, offset: int) -> dict[str, Any]:
-        return self._request("GET", "/api/v1/jobs", params={"limit": limit, "offset": offset})
+    def get_jobs(
+        self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]:
+        return self._request(
+            "GET",
+            "/api/v1/jobs",
+            params={"limit": limit, "offset": offset},
+            extra_headers=extra_headers,
+        )
 
-    def get_job(self, job_id: str) -> dict[str, Any]:
-        return self._request("GET", f"/api/v1/jobs/{job_id}")
+    def get_job(
+        self, job_id: str, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]:
+        return self._request(
+            "GET", f"/api/v1/jobs/{job_id}", extra_headers=extra_headers
+        )
 
-    def get_system_status(self) -> dict[str, Any]:
-        return self._request("GET", "/api/v1/health")
+    def get_system_status(
+        self, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]:
+        return self._request("GET", "/api/v1/health", extra_headers=extra_headers)
 
-    def log_audit_action(self, payload: dict[str, Any]) -> None:
-        self._request("POST", "/api/v1/audit/log", json=payload)
+    def log_audit_action(
+        self, payload: dict[str, Any], extra_headers: Optional[dict[str, str]] = None
+    ) -> None:
+        self._request("POST", "/api/v1/audit/log", json=payload, extra_headers=extra_headers)
