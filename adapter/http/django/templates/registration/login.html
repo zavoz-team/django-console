@@ -8,9 +8,7 @@
 <body>
     <main>
         <h1>Login</h1>
-        {% if form.errors %}
-        <p>invalid login</p>
-        {% endif %}
+        {% include 'backoffice/error.html' %}
         <form method="post">
             {% csrf_token %}
             {{ form.as_p }}

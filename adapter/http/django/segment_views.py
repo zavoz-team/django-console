@@ -3,46 +3,61 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
 
-from adapter.http.django.presenters import read_pagination, unavailable_context
+from adapter.http.django.forms import SegmentFilterForm, SegmentMembersFilterForm
+from adapter.http.django.presenters import ui_context, ui_errors
 
 
 def _render_unavailable(
     request: HttpRequest,
     *,
     title: str,
-    values: dict[str, str],
+    form: object,
+    status: int,
+    errors: list | None = None,
+    values: dict[str, str] | None = None,
 ) -> HttpResponse:
-    context = unavailable_context(
+    context = ui_context(
         title=title,
         message='usecase wiring pending',
+        errors=errors,
         values=values,
+        form=form,
     )
-    return render(request, 'backoffice/unavailable.html', context, status=503)
+    return render(request, 'backoffice/unavailable.html', context, status=status)
 
 
 @login_required
 @require_GET
 def segments_page(request: HttpRequest) -> HttpResponse:
-    values: dict[str, str] = {}
-    try:
-        pagination = read_pagination(request)
-    except ValueError:
-        values['query'] = 'invalid query'
-    else:
-        values['limit'] = str(pagination.limit)
-        values['offset'] = str(pagination.offset)
-    return _render_unavailable(request, title='Segments', values=values)
+    form = SegmentFilterForm(request.GET or None)
+    if form.is_bound and not form.is_valid():
+        return _render_unavailable(
+            request,
+            title='Segments',
+            form=form,
+            status=400,
+            errors=ui_errors(form),
+        )
+    return _render_unavailable(request, title='Segments', form=form, status=503)
 
 
 @login_required
 @require_GET
 def segment_members_page(request: HttpRequest, segment_id: str) -> HttpResponse:
-    values = {'segment_id': segment_id}
-    try:
-        pagination = read_pagination(request)
-    except ValueError:
-        values['query'] = 'invalid query'
-    else:
-        values['limit'] = str(pagination.limit)
-        values['offset'] = str(pagination.offset)
-    return _render_unavailable(request, title='Segment Members', values=values)
+    form = SegmentMembersFilterForm(request.GET or None)
+    if form.is_bound and not form.is_valid():
+        return _render_unavailable(
+            request,
+            title='Segment Members',
+            form=form,
+            status=400,
+            errors=ui_errors(form),
+            values={'segment_id': segment_id},
+        )
+    return _render_unavailable(
+        request,
+        title='Segment Members',
+        form=form,
+        status=503,
+        values={'segment_id': segment_id},
+    )

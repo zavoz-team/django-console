@@ -8,12 +8,21 @@
 <body>
     <main>
         <h1>{{ title }}</h1>
+        {% include 'backoffice/error.html' %}
+        {% if message %}
         <p>{{ message }}</p>
-        {% if values %}
+        {% endif %}
+        {% if form %}
+        <form method="get">
+            {{ form.as_p }}
+            <button type="submit">Apply</button>
+        </form>
+        {% endif %}
+        {% if details %}
         <dl>
-            {% for key, value in values.items %}
-            <dt>{{ key }}</dt>
-            <dd>{{ value }}</dd>
+            {% for item in details %}
+            <dt>{{ item.label }}</dt>
+            <dd>{{ item.value }}</dd>
             {% endfor %}
         </dl>
         {% endif %}

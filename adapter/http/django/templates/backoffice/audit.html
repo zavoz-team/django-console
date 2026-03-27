@@ -8,8 +8,15 @@
 <body>
     <main>
         <h1>{{ title }}</h1>
-        {% if error %}
-        <p>{{ error }}</p>
+        {% include 'backoffice/error.html' %}
+        {% if message %}
+        <p>{{ message }}</p>
+        {% endif %}
+        {% if form %}
+        <form method="get">
+            {{ form.as_p }}
+            <button type="submit">Apply</button>
+        </form>
         {% endif %}
         <p>limit={{ limit }} offset={{ offset }}</p>
         {% if entries %}
