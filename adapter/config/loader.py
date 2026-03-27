@@ -8,6 +8,7 @@ from dotenv import dotenv_values
 from .model import (
     AppConfig,
     AppSectionConfig,
+    CoreApiConfig,
     DatabaseConfig,
     HttpConfig,
     LoggingConfig,
@@ -41,6 +42,7 @@ def load_config(
     metrics_section = _section(yaml_data, 'metrics')
     tracing_section = _section(yaml_data, 'tracing')
     security_section = _section(yaml_data, 'security')
+    core_api_section = _section(yaml_data, 'core_api')
 
     logging_output = _yaml_or_env_choice(
         logging_section,
@@ -181,6 +183,42 @@ def load_config(
             ),
             api_token=_env_str(env_values, 'APP_API_TOKEN'),
             signing_key=_env_str(env_values, 'APP_SIGNING_KEY'),
+        ),
+        core_api=CoreApiConfig(
+            base_url=_yaml_or_env_str(
+                core_api_section,
+                'base_url',
+                'core_api.base_url',
+                env_values,
+                'APP_CORE_API_BASE_URL',
+            ),
+            timeout_seconds=_yaml_or_env_int(
+                core_api_section,
+                'timeout_seconds',
+                'core_api.timeout_seconds',
+                env_values,
+                'APP_CORE_API_TIMEOUT_SECONDS',
+            ),
+            service_token_header=_yaml_or_env_str(
+                core_api_section,
+                'service_token_header',
+                'core_api.service_token_header',
+                env_values,
+                'APP_CORE_API_SERVICE_TOKEN_HEADER',
+            ),
+            service_token=_env_str(env_values, 'APP_CORE_API_SERVICE_TOKEN'),
+            retry_attempts=_yaml_or_env_optional_int(
+                core_api_section,
+                'retry_attempts',
+                env_values,
+                'APP_CORE_API_RETRY_ATTEMPTS',
+            ),
+            retry_backoff_ms=_yaml_or_env_optional_int(
+                core_api_section,
+                'retry_backoff_ms',
+                env_values,
+                'APP_CORE_API_RETRY_BACKOFF_MS',
+            ),
         ),
     )
 
