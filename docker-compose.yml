@@ -9,6 +9,7 @@ services:
     environment:
       APP_API_TOKEN: ${APP_API_TOKEN:?APP_API_TOKEN is required}
       APP_SIGNING_KEY: ${APP_SIGNING_KEY:?APP_SIGNING_KEY is required}
+      APP_CORE_API_SERVICE_TOKEN: ${APP_CORE_API_SERVICE_TOKEN:?APP_CORE_API_SERVICE_TOKEN is required}
       APP_NAME: web-python-skelet
       APP_ENV: docker
       APP_HTTP_HOST: 0.0.0.0
