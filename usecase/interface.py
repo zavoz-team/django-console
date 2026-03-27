@@ -1,8 +1,9 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from types import TracebackType
 from typing import Protocol, TypeAlias
 
 from domain.user import User
+from usecase.dto import JobDTO, ProfileDTO, SegmentDTO, SystemStatusDTO
 
 AttrValue: TypeAlias = str | int | float | bool
 Attrs: TypeAlias = Mapping[str, AttrValue]
@@ -65,3 +66,33 @@ class Tracer(Protocol):
         name: str,
         attrs: Attrs | None = None,
     ) -> SpanContext: ...
+
+
+class ProfileGateway(Protocol):
+    def list_profiles(self, limit: int = 50, offset: int = 0) -> Sequence[ProfileDTO]: ...
+
+    def get_profile(self, customer_id: str) -> ProfileDTO | None: ...
+
+
+class SegmentGateway(Protocol):
+    def list_segments(self, limit: int = 50, offset: int = 0) -> Sequence[SegmentDTO]: ...
+
+    def get_segment_members(self, segment_id: str, limit: int = 50, offset: int = 0) -> Sequence[ProfileDTO]: ...
+
+
+class ExportGateway(Protocol):
+    def trigger_export(self, segment_id: str) -> str: ...
+
+
+class JobGateway(Protocol):
+    def list_jobs(self, limit: int = 50, offset: int = 0) -> Sequence[JobDTO]: ...
+
+    def get_job(self, job_id: str) -> JobDTO | None: ...
+
+
+class SystemStatusGateway(Protocol):
+    def get_status(self) -> SystemStatusDTO: ...
+
+
+class AuditGateway(Protocol):
+    def log_action(self, operator_id: str, action: str, target_id: str | None = None) -> None: ...
