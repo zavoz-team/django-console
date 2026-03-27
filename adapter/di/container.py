@@ -42,6 +42,7 @@ class AppUsecases:
 class AppContainer:
     config: AppConfig
     observability: ObservabilityRuntime
+    core_api_client: CoreApiClient
     gateways: AppGateways
     usecases: AppUsecases
     _is_shutdown: bool = field(default=False, init=False, repr=False)
@@ -51,6 +52,7 @@ class AppContainer:
             return
 
         try:
+            self.core_api_client.shutdown()
             self.observability.shutdown()
         finally:
             self._is_shutdown = True
@@ -88,6 +90,7 @@ def build_container(
     return AppContainer(
         config=app_config,
         observability=observability,
+        core_api_client=core_api_client,
         gateways=gateways,
         usecases=usecases,
     )
