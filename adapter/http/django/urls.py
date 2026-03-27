@@ -1,54 +1,14 @@
-from html import escape
-
 from django.conf import settings
-from django.contrib.auth.decorators import login_required
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
-from django.http import HttpRequest, HttpResponse
 from django.urls import path
-from django.views.decorators.http import require_GET
 
 from .auth_views import login_view, logout_view
+from .audit_views import audit_page
+from .export_views import exports_create_page
+from .job_views import jobs_page
+from .profile_views import profile_page, profiles_page
+from .segment_views import segment_members_page, segments_page
 from .views import health
-
-
-def _page(title: str, value: str | None = None) -> HttpResponse:
-    body = '<main>'
-    body += f'<h1>{escape(title)}</h1>'
-    if value is not None:
-        body += f'<p>{escape(value)}</p>'
-    body += '</main>'
-    return HttpResponse(
-        '<!doctype html>'
-        '<html lang="en">'
-        '<head>'
-        '<meta charset="utf-8">'
-        '<meta name="viewport" content="width=device-width, initial-scale=1">'
-        f'<title>{escape(title)}</title>'
-        '</head>'
-        f'<body>{body}</body>'
-        '</html>'
-    )
-
-
-def _html_view(title: str, field_name: str | None = None):
-    @login_required
-    @require_GET
-    def view(_: HttpRequest, **kwargs: str) -> HttpResponse:
-        value = None
-        if field_name is not None:
-            value = kwargs[field_name]
-        return _page(title, value)
-
-    return view
-
-
-profiles_page = _html_view('Profiles')
-profile_page = _html_view('Profile', 'customer_id')
-segments_page = _html_view('Segments')
-segment_members_page = _html_view('Segment Members', 'segment_id')
-jobs_page = _html_view('Jobs')
-exports_create_page = _html_view('Create Export')
-audit_page = _html_view('Audit')
 
 public_urlpatterns = [
     path('login/', login_view, name='login'),

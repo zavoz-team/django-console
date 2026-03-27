@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <main>
+        <h1>{{ title }}</h1>
+        <p>{{ message }}</p>
+        {% if values %}
+        <dl>
+            {% for key, value in values.items %}
+            <dt>{{ key }}</dt>
+            <dd>{{ value }}</dd>
+            {% endfor %}
+        </dl>
+        {% endif %}
+    </main>
+</body>
+</html>

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <main>
+        <h1>{{ title }}</h1>
+        <p>{{ message }}</p>
+        {% if messages %}
+        {% for item in messages %}
+        <p>{{ item }}</p>
+        {% endfor %}
+        {% endif %}
+        <form method="post">
+            {% csrf_token %}
+            <p>
+                <label for="id_segment_id">segment</label>
+                <input id="id_segment_id" name="segment_id" value="{{ values.segment_id }}">
+            </p>
+            <p>
+                <label for="id_destination">destination</label>
+                <input id="id_destination" name="destination" value="{{ values.destination }}">
+            </p>
+            <button type="submit">Start</button>
+        </form>
+    </main>
+</body>
+</html>
