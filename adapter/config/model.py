@@ -58,6 +58,16 @@ class SecurityConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class CoreApiConfig:
+    base_url: str
+    timeout_seconds: int
+    service_token_header: str
+    service_token: str
+    retry_attempts: int | None
+    retry_backoff_ms: int | None
+
+
+@dataclass(frozen=True, slots=True)
 class AppConfig:
     app: AppSectionConfig
     http: HttpConfig
@@ -67,3 +77,4 @@ class AppConfig:
     tracing: TracingConfig
     otel: OtelConfig
     security: SecurityConfig
+    core_api: CoreApiConfig

@@ -30,3 +30,10 @@ otel:
 
 security:
   token_header: X-API-Token
+
+core_api:
+  base_url: http://localhost:8080
+  timeout_seconds: 30
+  service_token_header: X-Service-Token
+  retry_attempts: 3
+  retry_backoff_ms: 1000
