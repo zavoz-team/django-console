@@ -11,17 +11,27 @@ from repository.core_api.export import CoreApiExportGateway
 from repository.core_api.profile import CoreApiProfileGateway
 from repository.core_api.segment import CoreApiSegmentGateway
 from repository.core_api.system import CoreApiSystemGateway
+from repository.django.audit_log import DjangoAuditLogRepository
+from repository.django.user import DjangoUserRepository
+from usecase.audit import (
+    ListAuditEntries,
+    LogCriticalPageView,
+    LogOperatorAction,
+)
 from usecase.interface import (
+    AuditLogRepository,
     ExportGateway,
     ProfileGateway,
     SegmentGateway,
     SystemGateway,
+    UserRepository,
 )
 
 
 @dataclass(frozen=True, slots=True)
 class AppRepositories:
-    pass
+    user: UserRepository
+    audit_log: AuditLogRepository
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,7 +44,9 @@ class AppGateways:
 
 @dataclass(frozen=True, slots=True)
 class AppUsecases:
-    pass
+    log_operator_action: LogOperatorAction
+    log_critical_page_view: LogCriticalPageView
+    list_audit_entries: ListAuditEntries
 
 
 @dataclass(slots=True)
@@ -78,7 +90,13 @@ def build_container(
         config=app_config.core_api, tracer=observability.tracer
     )
 
-    repositories = AppRepositories()
+    user_repository = DjangoUserRepository(tracer=observability.tracer)
+    audit_log_repository = DjangoAuditLogRepository(tracer=observability.tracer)
+
+    repositories = AppRepositories(
+        user=user_repository,
+        audit_log=audit_log_repository,
+    )
 
     gateways = AppGateways(
         profile=CoreApiProfileGateway(client=core_api_client),
@@ -87,7 +105,22 @@ def build_container(
         system=CoreApiSystemGateway(client=core_api_client),
     )
 
-    usecases = AppUsecases()
+    log_operator_action = LogOperatorAction(
+        repository=audit_log_repository,
+        logger=observability.logger,
+        tracer=observability.tracer,
+    )
+
+    usecases = AppUsecases(
+        log_operator_action=log_operator_action,
+        log_critical_page_view=LogCriticalPageView(
+            log_operator_action=log_operator_action
+        ),
+        list_audit_entries=ListAuditEntries(
+            repository=audit_log_repository,
+            tracer=observability.tracer,
+        ),
+    )
 
     return AppContainer(
         config=app_config,
