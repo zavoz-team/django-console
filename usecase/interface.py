@@ -32,7 +32,7 @@ class ProfileGateway(Protocol):
 
 
 class SegmentGateway(Protocol):
-    def list(self, pagination: Pagination) -> list[SegmentSummary]: ...
+    def list_segments(self, pagination: Pagination) -> list[SegmentSummary]: ...
 
     def list_members(
         self,
@@ -42,7 +42,11 @@ class SegmentGateway(Protocol):
 
 
 class ExportGateway(Protocol):
-    def trigger(self, segment_id: str) -> ExportJobSummary: ...
+    def trigger(
+        self,
+        segment_id: str,
+        destination: str,
+    ) -> ExportJobSummary: ...
 
     def list_jobs(self, pagination: Pagination) -> list[ExportJobSummary]: ...
 

@@ -34,7 +34,7 @@ class ListSegments:
                 'pagination.offset': query.pagination.offset,
             },
         ):
-            return self._gateway.list(query.pagination)
+            return self._gateway.list_segments(query.pagination)
 
 
 class GetSegmentMembers:

@@ -10,7 +10,9 @@ from usecase.interface import AuditLogRepository, ExportGateway, Logger, Tracer
 @dataclass(frozen=True, slots=True)
 class TriggerExportQuery:
     segment_id: str
+    destination: str
     actor_email: str
+    actor_id: str | None = None
     trace_id: str | None = None
 
 
@@ -35,10 +37,16 @@ class TriggerExport:
     def execute(self, query: TriggerExportQuery) -> ExportJobSummary:
         with self._tracer.start_span(
             'usecase.trigger_export',
-            attrs={'segment.id': query.segment_id},
+            attrs={
+                'segment.id': query.segment_id,
+                'export.destination': query.destination,
+            },
         ) as span:
             try:
-                job = self._gateway.trigger(query.segment_id)
+                job = self._gateway.trigger(
+                    segment_id=query.segment_id,
+                    destination=query.destination,
+                )
             except Exception as exc:
                 self._audit_log_repository.save(
                     AuditEntry(
@@ -48,7 +56,11 @@ class TriggerExport:
                         target_type='segment',
                         target_id=query.segment_id,
                         status='failed',
-                        payload_json={'error': str(exc)},
+                        payload_json={
+                            'destination': query.destination,
+                            'actor_id': query.actor_id or '',
+                            'error': str(exc),
+                        },
                         trace_id=query.trace_id,
                     )
                 )
@@ -68,7 +80,11 @@ class TriggerExport:
                     target_type='segment',
                     target_id=query.segment_id,
                     status='success',
-                    payload_json={'export_job_id': job.id},
+                    payload_json={
+                        'destination': query.destination,
+                        'actor_id': query.actor_id or '',
+                        'export_job_id': job.id,
+                    },
                     trace_id=query.trace_id,
                 )
             )
