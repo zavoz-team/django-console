@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from domain.error import CoreUnavailableError
 from usecase.interface import SystemGateway, Tracer
 
 
@@ -18,4 +19,8 @@ class GetSystemStatus:
         self._tracer = tracer
 
     def execute(self, query: GetSystemStatusQuery) -> bool:
-        raise NotImplementedError()
+        with self._tracer.start_span('usecase.get_system_status'):
+            available = self._gateway.is_core_available()
+            if not available:
+                raise CoreUnavailableError()
+            return True

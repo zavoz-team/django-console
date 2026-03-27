@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 
+from domain.error import ExportTriggerError
 from domain.export_job import ExportJobSummary
 from domain.query import Pagination
 from usecase.interface import ExportGateway, Logger, Tracer
@@ -27,7 +28,23 @@ class TriggerExport:
         self._tracer = tracer
 
     def execute(self, query: TriggerExportQuery) -> ExportJobSummary:
-        raise NotImplementedError()
+        with self._tracer.start_span(
+            'usecase.trigger_export',
+            attrs={'segment.id': query.segment_id},
+        ) as span:
+            try:
+                job = self._gateway.trigger(query.segment_id)
+            except Exception as exc:
+                error = ExportTriggerError(reason=str(exc))
+                span.record_error(error)
+                self._logger.error(
+                    'export_trigger_error',
+                    attrs={'segment_id': query.segment_id},
+                )
+                raise error from exc
+
+            span.set_attribute('export_job.id', job.id)
+            return job
 
 
 class ListJobs:
@@ -40,4 +57,11 @@ class ListJobs:
         self._tracer = tracer
 
     def execute(self, query: ListJobsQuery) -> list[ExportJobSummary]:
-        raise NotImplementedError()
+        with self._tracer.start_span(
+            'usecase.list_jobs',
+            attrs={
+                'pagination.limit': query.pagination.limit,
+                'pagination.offset': query.pagination.offset,
+            },
+        ):
+            return self._gateway.list_jobs(query.pagination)

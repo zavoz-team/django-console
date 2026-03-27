@@ -38,7 +38,7 @@ class SegmentGateway(Protocol):
         self,
         segment_id: str,
         pagination: Pagination,
-    ) -> list[SegmentMember]: ...
+    ) -> list[SegmentMember] | None: ...
 
 
 class ExportGateway(Protocol):
