@@ -1,14 +1,17 @@
 from dataclasses import dataclass
 
+from domain.audit import AuditEntry
 from domain.error import ExportTriggerError
 from domain.export_job import ExportJobSummary
 from domain.query import Pagination
-from usecase.interface import ExportGateway, Logger, Tracer
+from usecase.interface import AuditLogRepository, ExportGateway, Logger, Tracer
 
 
 @dataclass(frozen=True, slots=True)
 class TriggerExportQuery:
     segment_id: str
+    actor_email: str
+    trace_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,10 +23,12 @@ class TriggerExport:
     def __init__(
         self,
         gateway: ExportGateway,
+        audit_log_repository: AuditLogRepository,
         logger: Logger,
         tracer: Tracer,
     ) -> None:
         self._gateway = gateway
+        self._audit_log_repository = audit_log_repository
         self._logger = logger
         self._tracer = tracer
 
@@ -35,6 +40,18 @@ class TriggerExport:
             try:
                 job = self._gateway.trigger(query.segment_id)
             except Exception as exc:
+                self._audit_log_repository.save(
+                    AuditEntry(
+                        id=0,
+                        actor_email=query.actor_email,
+                        action='trigger_export',
+                        target_type='segment',
+                        target_id=query.segment_id,
+                        status='failed',
+                        payload_json={'error': str(exc)},
+                        trace_id=query.trace_id,
+                    )
+                )
                 error = ExportTriggerError(reason=str(exc))
                 span.record_error(error)
                 self._logger.error(
@@ -43,6 +60,18 @@ class TriggerExport:
                 )
                 raise error from exc
 
+            self._audit_log_repository.save(
+                AuditEntry(
+                    id=0,
+                    actor_email=query.actor_email,
+                    action='trigger_export',
+                    target_type='segment',
+                    target_id=query.segment_id,
+                    status='success',
+                    payload_json={'export_job_id': job.id},
+                    trace_id=query.trace_id,
+                )
+            )
             span.set_attribute('export_job.id', job.id)
             return job
 

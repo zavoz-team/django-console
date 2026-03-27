@@ -51,10 +51,17 @@ class SystemGateway(Protocol):
     def is_core_available(self) -> bool: ...
 
 
-class AuditGateway(Protocol):
-    def list_entries(self, pagination: Pagination) -> list[AuditEntry]: ...
+class AuditLogRepository(Protocol):
+    def save(self, entry: AuditEntry) -> AuditEntry: ...
 
-    def log_operator_action(self, entry: AuditEntry) -> None: ...
+    def list_recent(self, pagination: Pagination) -> list[AuditEntry]: ...
+
+    def list_by_target(
+        self,
+        target_type: str,
+        target_id: str,
+        pagination: Pagination,
+    ) -> list[AuditEntry]: ...
 
 
 class Logger(Protocol):

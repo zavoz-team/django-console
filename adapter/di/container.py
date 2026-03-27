@@ -6,19 +6,25 @@ from adapter.config.loader import load_config
 from adapter.config.model import AppConfig
 from adapter.observability.factory import build_observability
 from adapter.observability.runtime import ObservabilityRuntime
+from repository.django.audit_log import DjangoAuditLogRepository
 from repository.django.user import DjangoUserRepository
-from usecase.interface import UserRepository
+from usecase.audit import ListAuditEntries, LogCriticalPageView, LogOperatorAction
+from usecase.interface import AuditLogRepository, UserRepository
 from usecase.user import GetUser
 
 
 @dataclass(frozen=True, slots=True)
 class AppRepositories:
     user: UserRepository
+    audit_log: AuditLogRepository
 
 
 @dataclass(frozen=True, slots=True)
 class AppUsecases:
     get_user: GetUser
+    log_operator_action: LogOperatorAction
+    log_critical_page_view: LogCriticalPageView
+    list_audit_entries: ListAuditEntries
 
 
 @dataclass(slots=True)
@@ -56,13 +62,28 @@ def build_container(
     observability = build_observability(app_config)
 
     user_repository = DjangoUserRepository(observability.tracer)
-    repositories = AppRepositories(user=user_repository)
+    audit_log_repository = DjangoAuditLogRepository(observability.tracer)
+    repositories = AppRepositories(
+        user=user_repository,
+        audit_log=audit_log_repository,
+    )
+    log_operator_action = LogOperatorAction(
+        repository=audit_log_repository,
+        logger=observability.logger,
+        tracer=observability.tracer,
+    )
     usecases = AppUsecases(
         get_user=GetUser(
             repository=user_repository,
             logger=observability.logger,
             tracer=observability.tracer,
-        )
+        ),
+        log_operator_action=log_operator_action,
+        log_critical_page_view=LogCriticalPageView(log_operator_action),
+        list_audit_entries=ListAuditEntries(
+            repository=audit_log_repository,
+            tracer=observability.tracer,
+        ),
     )
 
     return AppContainer(
