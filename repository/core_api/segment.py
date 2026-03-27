@@ -1,17 +1,8 @@
 from collections.abc import Sequence
 
 from repository.core_api.client import CoreApiClient
-from repository.core_api.dto import CoreApiProfileDTO, CoreApiSegmentDTO
 from usecase.dto import ProfileDTO, SegmentDTO
 from usecase.interface import SegmentGateway
-
-
-def _to_segment_dto(core_dto: CoreApiSegmentDTO) -> SegmentDTO:
-    return SegmentDTO(id=core_dto.id, name=core_dto.name)
-
-
-def _to_profile_dto(core_dto: CoreApiProfileDTO) -> ProfileDTO:
-    return ProfileDTO(id=core_dto.id, name=core_dto.name)
 
 
 class CoreApiSegmentGateway(SegmentGateway):
@@ -24,8 +15,7 @@ class CoreApiSegmentGateway(SegmentGateway):
         segments = []
         if isinstance(response_data, list):
             for item in response_data:
-                core_dto = CoreApiSegmentDTO(**item)
-                segments.append(_to_segment_dto(core_dto))
+                segments.append(SegmentDTO(**item))
 
         return segments
 
@@ -39,7 +29,6 @@ class CoreApiSegmentGateway(SegmentGateway):
         members = []
         if isinstance(response_data, list):
             for item in response_data:
-                core_dto = CoreApiProfileDTO(**item)
-                members.append(_to_profile_dto(core_dto))
+                members.append(ProfileDTO(**item))
 
         return members
