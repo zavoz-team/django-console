@@ -3,52 +3,84 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.views.decorators.http import require_GET
 
-from adapter.http.django.forms import ProfileFilterForm
-from adapter.http.django.presenters import ui_context, ui_errors
+from adapter.http.django.forms import ProfilesFilterForm
+from adapter.http.django.presenters import (
+    profile_detail,
+    profile_rows,
+    ui_context,
+    ui_errors,
+)
+from adapter.http.django.runtime import get_container
+from domain.error import CoreUnavailableError, ProfileNotFoundError
+from domain.query import TextQuery
+from usecase.profile import GetProfileQuery, ListProfilesQuery
 
 
-def _render_unavailable(
-    request: HttpRequest,
-    *,
-    title: str,
-    form: ProfileFilterForm,
-    status: int,
-    errors: list | None = None,
-    values: dict[str, str] | None = None,
-) -> HttpResponse:
-    context = ui_context(
-        title=title,
-        message='usecase wiring pending',
-        errors=errors,
-        values=values,
-        form=form,
-    )
-    return render(request, 'backoffice/unavailable.html', context, status=status)
+def _profile_query(form: ProfilesFilterForm) -> TextQuery | None:
+    values = [
+        form.cleaned_data.get('email'),
+        form.cleaned_data.get('external_id'),
+        form.cleaned_data.get('segment'),
+    ]
+    parts = [value for value in values if value]
+    if not parts:
+        return None
+    return TextQuery(value=' '.join(parts))
 
 
 @login_required
 @require_GET
 def profiles_page(request: HttpRequest) -> HttpResponse:
-    form = ProfileFilterForm(request.GET or None)
-    if form.is_bound and not form.is_valid():
-        return _render_unavailable(
-            request,
+    form = ProfilesFilterForm(request.GET or None)
+    valid = form.is_valid()
+    if form.is_bound and not valid:
+        context = ui_context(
             title='Profiles',
-            form=form,
-            status=400,
             errors=ui_errors(form),
+            form=form,
         )
-    return _render_unavailable(request, title='Profiles', form=form, status=503)
+        return render(request, 'backoffice/profiles.html', context, status=400)
+
+    query = _profile_query(form) if valid else None
+    profiles = get_container().usecases.list_profiles.execute(
+        ListProfilesQuery(
+            pagination=form.pagination(),
+            query=query,
+        )
+    )
+    context = ui_context(
+        title='Profiles',
+        form=form,
+        extra={'rows': profile_rows(list(profiles))},
+    )
+    return render(request, 'backoffice/profiles.html', context)
 
 
 @login_required
 @require_GET
 def profile_page(request: HttpRequest, customer_id: str) -> HttpResponse:
-    form = ProfileFilterForm()
-    return _render_unavailable(
-        request,
+    try:
+        profile = get_container().usecases.get_profile.execute(
+            GetProfileQuery(profile_id=customer_id)
+        )
+    except ProfileNotFoundError:
+        context = ui_context(
+            title='Profile',
+            errors=ui_errors(messages=('not found',)),
+            values={'customer_id': customer_id},
+        )
+        return render(request, 'backoffice/profile.html', context, status=404)
+    except CoreUnavailableError:
+        context = ui_context(
+            title='Profile',
+            errors=ui_errors(messages=('unavailable',)),
+            values={'customer_id': customer_id},
+        )
+        return render(request, 'backoffice/profile.html', context, status=503)
+
+    item = profile_detail(profile)
+    context = ui_context(
         title='Profile',
-        form=form,
-        status=503,
-        values={'customer_id': customer_id},
+        extra={'profile': item},
     )
+    return render(request, 'backoffice/profile.html', context)

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from domain.error import SegmentNotFoundError
+from domain.error import CoreUnavailableError, SegmentNotFoundError
 from domain.query import Pagination
 from domain.segment import SegmentMember, SegmentSummary
 from usecase.interface import SegmentGateway, Tracer
@@ -33,8 +33,12 @@ class ListSegments:
                 'pagination.limit': query.pagination.limit,
                 'pagination.offset': query.pagination.offset,
             },
-        ):
-            return self._gateway.list_segments(query.pagination)
+        ) as span:
+            try:
+                return self._gateway.list_segments(query.pagination)
+            except Exception as exc:
+                span.record_error(exc)
+                raise CoreUnavailableError() from exc
 
 
 class GetSegmentMembers:
@@ -54,11 +58,15 @@ class GetSegmentMembers:
                 'pagination.limit': query.pagination.limit,
                 'pagination.offset': query.pagination.offset,
             },
-        ):
-            members = self._gateway.list_members(
-                segment_id=query.segment_id,
-                pagination=query.pagination,
-            )
+        ) as span:
+            try:
+                members = self._gateway.list_members(
+                    segment_id=query.segment_id,
+                    pagination=query.pagination,
+                )
+            except Exception as exc:
+                span.record_error(exc)
+                raise CoreUnavailableError() from exc
             if members is None:
                 raise SegmentNotFoundError(query.segment_id)
             return members

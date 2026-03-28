@@ -18,6 +18,7 @@ from usecase.audit import (
     LogCriticalPageView,
     LogOperatorAction,
 )
+from usecase.export_job import ListJobs, TriggerExport
 from usecase.interface import (
     AuditLogRepository,
     ExportGateway,
@@ -26,6 +27,8 @@ from usecase.interface import (
     SystemGateway,
     UserRepository,
 )
+from usecase.profile import GetProfile, ListProfiles
+from usecase.segment import GetSegmentMembers, ListSegments
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +47,12 @@ class AppGateways:
 
 @dataclass(frozen=True, slots=True)
 class AppUsecases:
+    list_profiles: ListProfiles
+    get_profile: GetProfile
+    list_segments: ListSegments
+    get_segment_members: GetSegmentMembers
+    trigger_export: TriggerExport
+    list_jobs: ListJobs
     log_operator_action: LogOperatorAction
     log_critical_page_view: LogCriticalPageView
     list_audit_entries: ListAuditEntries
@@ -112,6 +121,33 @@ def build_container(
     )
 
     usecases = AppUsecases(
+        list_profiles=ListProfiles(
+            gateway=gateways.profile,
+            tracer=observability.tracer,
+        ),
+        get_profile=GetProfile(
+            gateway=gateways.profile,
+            logger=observability.logger,
+            tracer=observability.tracer,
+        ),
+        list_segments=ListSegments(
+            gateway=gateways.segment,
+            tracer=observability.tracer,
+        ),
+        get_segment_members=GetSegmentMembers(
+            gateway=gateways.segment,
+            tracer=observability.tracer,
+        ),
+        trigger_export=TriggerExport(
+            gateway=gateways.export,
+            audit_log_repository=audit_log_repository,
+            logger=observability.logger,
+            tracer=observability.tracer,
+        ),
+        list_jobs=ListJobs(
+            gateway=gateways.export,
+            tracer=observability.tracer,
+        ),
         log_operator_action=log_operator_action,
         log_critical_page_view=LogCriticalPageView(
             log_operator_action=log_operator_action

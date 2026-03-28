@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from domain.audit import AuditEntry
-from domain.error import ExportTriggerError
+from domain.error import CoreUnavailableError, ExportTriggerError
 from domain.export_job import ExportJobSummary
 from domain.query import Pagination
 from usecase.interface import AuditLogRepository, ExportGateway, Logger, Tracer
@@ -108,5 +108,9 @@ class ListJobs:
                 'pagination.limit': query.pagination.limit,
                 'pagination.offset': query.pagination.offset,
             },
-        ):
-            return self._gateway.list_jobs(query.pagination)
+        ) as span:
+            try:
+                return self._gateway.list_jobs(query.pagination)
+            except Exception as exc:
+                span.record_error(exc)
+                raise CoreUnavailableError() from exc

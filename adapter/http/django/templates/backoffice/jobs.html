@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <main>
+        <h1>{{ title }}</h1>
+        {% include 'backoffice/error.html' %}
+        <form method="get">
+            {{ form.as_p }}
+            <button type="submit">Apply</button>
+        </form>
+        {% if rows %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Id</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Finished</th>
+                    <th>Records</th>
+                    <th>Error</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>{{ row.id }}</td>
+                    <td>{{ row.status }}</td>
+                    <td>{{ row.created_at }}</td>
+                    <td>{{ row.finished_at }}</td>
+                    <td>{{ row.records_count }}</td>
+                    <td>{{ row.error_code }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>empty</p>
+        {% endif %}
+    </main>
+</body>
+</html>

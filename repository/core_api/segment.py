@@ -1,6 +1,7 @@
 from domain.query import Pagination
 from domain.segment import SegmentMember, SegmentSummary
 from repository.core_api.client import CoreApiClient
+from repository.core_api.errors import CoreApiNotFoundError
 from usecase.interface import SegmentGateway
 
 
@@ -27,7 +28,7 @@ class CoreApiSegmentGateway(SegmentGateway):
             response_data = self._client.get_segment_members(
                 segment_id=segment_id, limit=pagination.limit, offset=pagination.offset
             )
-        except Exception:
+        except CoreApiNotFoundError:
             return None
 
         members = []

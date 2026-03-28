@@ -141,12 +141,18 @@ class CoreApiClient:
         )
 
     def trigger_export(
-        self, segment_id: str, extra_headers: Optional[dict[str, str]] = None
+        self,
+        segment_id: str,
+        destination: str,
+        extra_headers: Optional[dict[str, str]] = None,
     ) -> dict[str, Any]:
         return self._request(
             "POST",
             "/api/v1/exports",
-            json={"segment_id": segment_id},
+            json={
+                "segment_id": segment_id,
+                "destination": destination,
+            },
             extra_headers=extra_headers,
         )
 

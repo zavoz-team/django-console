@@ -9,7 +9,10 @@ class CoreApiExportGateway(ExportGateway):
         self._client = client
 
     def trigger_export(self, segment_id: str, destination: str) -> ExportJobSummary:
-        response_data = self._client.trigger_export(segment_id)
+        response_data = self._client.trigger_export(
+            segment_id=segment_id,
+            destination=destination,
+        )
         return ExportJobSummary(**response_data)
 
     def list_jobs(self, pagination: Pagination) -> list[ExportJobSummary]:

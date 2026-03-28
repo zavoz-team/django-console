@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <main>
+        <h1>{{ title }}</h1>
+        {% include 'backoffice/error.html' %}
+        {% if details %}
+        <dl>
+            {% for item in details %}
+            <dt>{{ item.label }}</dt>
+            <dd>{{ item.value }}</dd>
+            {% endfor %}
+        </dl>
+        {% endif %}
+        {% if profile %}
+        <section>
+            <dl>
+                <dt>Id</dt>
+                <dd>{{ profile.id }}</dd>
+                <dt>Name</dt>
+                <dd>{{ profile.display_name }}</dd>
+                <dt>Email</dt>
+                <dd>{{ profile.email }}</dd>
+                <dt>Phone</dt>
+                <dd>{{ profile.phone }}</dd>
+                <dt>Updated</dt>
+                <dd>{{ profile.updated_at }}</dd>
+            </dl>
+        </section>
+        {% if profile.attributes %}
+        <section>
+            <h2>Attributes</h2>
+            <dl>
+                {% for item in profile.attributes %}
+                <dt>{{ item.label }}</dt>
+                <dd>{{ item.value }}</dd>
+                {% endfor %}
+            </dl>
+        </section>
+        {% endif %}
+        {% endif %}
+    </main>
+</body>
+</html>

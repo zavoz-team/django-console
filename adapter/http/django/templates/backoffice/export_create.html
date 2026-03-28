@@ -17,6 +17,22 @@
             {{ form.as_p }}
             <button type="submit">Start</button>
         </form>
+        {% if job %}
+        <dl>
+            <dt>Id</dt>
+            <dd>{{ job.id }}</dd>
+            <dt>Status</dt>
+            <dd>{{ job.status }}</dd>
+            <dt>Created</dt>
+            <dd>{{ job.created_at }}</dd>
+            <dt>Finished</dt>
+            <dd>{{ job.finished_at }}</dd>
+            <dt>Records</dt>
+            <dd>{{ job.records_count }}</dd>
+            <dt>Error</dt>
+            <dd>{{ job.error_code }}</dd>
+        </dl>
+        {% endif %}
     </main>
 </body>
 </html>
