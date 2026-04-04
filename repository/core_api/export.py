@@ -24,6 +24,14 @@ class CoreApiExportGateway:
     def __init__(self, client: CoreApiClientInterface) -> None:
         self._client = client
 
-    def trigger_export(self, segment_id: str) -> ExportJob:
-        response_data = self._client.trigger_export(segment_id)
+    def trigger_export(
+        self, segment_id: str, actor_id: str, trace_id: str
+    ) -> ExportJob:
+        extra_headers = {
+            "X-Actor-ID": actor_id,
+            "X-Trace-ID": trace_id,
+        }
+        response_data = self._client.trigger_export(
+            segment_id, extra_headers=extra_headers
+        )
         return _to_domain_export_job(CoreApiExportJobDTO(**response_data))

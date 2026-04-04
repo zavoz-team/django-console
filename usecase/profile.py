@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from domain.error import ProfileNotFoundError
-from domain.profile import ProfileDetails, ProfileSummary
+from domain.profile import Profile
 from domain.query import Pagination, TextQuery
 from usecase.interface import Logger, ProfileGateway, Tracer
 
@@ -28,12 +28,12 @@ class GetProfile:
         self._logger = logger
         self._tracer = tracer
 
-    def execute(self, query: GetProfileQuery) -> ProfileDetails:
+    def execute(self, query: GetProfileQuery) -> Profile:
         with self._tracer.start_span(
             'usecase.get_profile',
             attrs={'profile.id': query.profile_id},
         ) as span:
-            profile = self._gateway.get(query.profile_id)
+            profile = self._gateway.get_profile(query.profile_id)
             if profile is None:
                 error = ProfileNotFoundError(query.profile_id)
                 span.record_error(error)
@@ -55,15 +55,16 @@ class ListProfiles:
         self._gateway = gateway
         self._tracer = tracer
 
-    def execute(self, query: ListProfilesQuery) -> list[ProfileSummary]:
+    def execute(self, query: ListProfilesQuery) -> list[Profile]:
         with self._tracer.start_span(
             'usecase.list_profiles',
             attrs={
                 'pagination.limit': query.pagination.limit,
                 'pagination.offset': query.pagination.offset,
+                'query': query.query.value if query.query else '',
             },
         ):
-            return self._gateway.list(
+            return self._gateway.list_profiles(
                 pagination=query.pagination,
                 query=query.query,
             )

@@ -5,6 +5,7 @@ from typing import Any, Optional
 import httpx
 
 from adapter.config.model import CoreApiConfig
+from domain.query import TextQuery
 from repository.core_api.errors import (
     CoreApiDataError,
     CoreApiError,
@@ -100,12 +101,19 @@ class CoreApiClient:
                     raise CoreApiError(f"An unexpected error occurred: {exc}") from exc
 
     def get_profiles(
-        self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
+        self,
+        limit: int,
+        offset: int,
+        query: TextQuery | None = None,
+        extra_headers: Optional[dict[str, str]] = None,
     ) -> dict[str, Any]:
+        params = {"limit": limit, "offset": offset}
+        if query:
+            params["q"] = query.value
         return self._request(
             "GET",
             "/api/v1/profiles",
-            params={"limit": limit, "offset": offset},
+            params=params,
             extra_headers=extra_headers,
         )
 

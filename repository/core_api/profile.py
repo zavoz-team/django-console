@@ -2,6 +2,7 @@ from collections.abc import Sequence
 from datetime import datetime
 
 from domain.profile import Profile, ProfileStatus
+from domain.query import Pagination, TextQuery
 from repository.core_api.dto import CoreApiProfileDTO
 from repository.core_api.errors import CoreApiDataError, CoreApiNotFoundError
 from usecase.interface import CoreApiClientInterface
@@ -26,8 +27,14 @@ class CoreApiProfileGateway:
     def __init__(self, client: CoreApiClientInterface) -> None:
         self._client = client
 
-    def list_profiles(self, limit: int = 50, offset: int = 0) -> Sequence[Profile]:
-        response_data = self._client.get_profiles(limit=limit, offset=offset)
+    def list_profiles(
+        self, pagination: Pagination, query: TextQuery | None = None
+    ) -> Sequence[Profile]:
+        response_data = self._client.get_profiles(
+            limit=pagination.limit,
+            offset=pagination.offset,
+            query=query,
+        )
         profiles_data = response_data.get("profiles", [])
         if not isinstance(profiles_data, list):
             raise CoreApiDataError("Invalid profiles list format")

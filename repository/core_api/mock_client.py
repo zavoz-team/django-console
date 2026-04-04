@@ -1,5 +1,6 @@
 from typing import Any, Optional
 
+from domain.query import TextQuery
 from repository.core_api.errors import CoreApiNotFoundError
 from usecase.dto import SystemStatusDTO
 
@@ -16,11 +17,25 @@ class MockCoreApiClient:
         pass
 
     def get_profiles(
-        self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
+        self,
+        limit: int,
+        offset: int,
+        query: TextQuery | None = None,
+        extra_headers: Optional[dict[str, str]] = None,
     ) -> dict[str, Any]:
         if self.should_throw_not_found:
             raise CoreApiNotFoundError("Profiles not found")
-        return {"profiles": self.profiles[offset : offset + limit]}
+
+        filtered_profiles = self.profiles
+        if query:
+            filtered_profiles = [
+                p
+                for p in self.profiles
+                if query.value.lower() in p.get("name", "").lower()
+                or query.value.lower() in p.get("email", "").lower()
+            ]
+
+        return {"profiles": filtered_profiles[offset : offset + limit]}
 
     def get_profile(
         self, customer_id: str, extra_headers: Optional[dict[str, str]] = None

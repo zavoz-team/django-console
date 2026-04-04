@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from domain.audit import AuditEntry
 from domain.error import ExportTriggerError
-from domain.export_job import ExportJobSummary
+from domain.export_job import ExportJob
 from domain.query import Pagination
 from usecase.interface import AuditLogRepository, ExportGateway, Logger, Tracer
 
@@ -10,10 +10,9 @@ from usecase.interface import AuditLogRepository, ExportGateway, Logger, Tracer
 @dataclass(frozen=True, slots=True)
 class TriggerExportQuery:
     segment_id: str
-    destination: str
     actor_email: str
-    actor_id: str | None = None
-    trace_id: str | None = None
+    actor_id: str
+    trace_id: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,18 +33,20 @@ class TriggerExport:
         self._logger = logger
         self._tracer = tracer
 
-    def execute(self, query: TriggerExportQuery) -> ExportJobSummary:
+    def execute(self, query: TriggerExportQuery) -> ExportJob:
         with self._tracer.start_span(
             'usecase.trigger_export',
             attrs={
                 'segment.id': query.segment_id,
-                'export.destination': query.destination,
+                'actor.id': query.actor_id,
+                'trace.id': query.trace_id,
             },
         ) as span:
             try:
                 job = self._gateway.trigger_export(
                     segment_id=query.segment_id,
-                    destination=query.destination,
+                    actor_id=query.actor_id,
+                    trace_id=query.trace_id,
                 )
             except Exception as exc:
                 self._audit_log_repository.save(
@@ -57,8 +58,7 @@ class TriggerExport:
                         target_id=query.segment_id,
                         status='failed',
                         payload_json={
-                            'destination': query.destination,
-                            'actor_id': query.actor_id or '',
+                            'actor_id': query.actor_id,
                             'error': str(exc),
                         },
                         trace_id=query.trace_id,
@@ -81,8 +81,7 @@ class TriggerExport:
                     target_id=query.segment_id,
                     status='success',
                     payload_json={
-                        'destination': query.destination,
-                        'actor_id': query.actor_id or '',
+                        'actor_id': query.actor_id,
                         'export_job_id': job.id,
                     },
                     trace_id=query.trace_id,
@@ -101,7 +100,7 @@ class ListJobs:
         self._gateway = gateway
         self._tracer = tracer
 
-    def execute(self, query: ListJobsQuery) -> list[ExportJobSummary]:
+    def execute(self, query: ListJobsQuery) -> list[ExportJob]:
         with self._tracer.start_span(
             'usecase.list_jobs',
             attrs={

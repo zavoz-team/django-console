@@ -3,9 +3,12 @@ from types import TracebackType
 from typing import Any, Optional, Protocol, TypeAlias
 
 from domain.audit import AuditEntry
-from domain.query import Pagination
+from domain.export_job import ExportJob
+from domain.profile import Profile
+from domain.query import Pagination, TextQuery
+from domain.segment import Segment
 from domain.user import User
-from usecase.dto import JobDTO, ProfileDTO, SegmentDTO, SystemStatusDTO
+
 
 AttrValue: TypeAlias = str | int | float | bool
 Attrs: TypeAlias = Mapping[str, AttrValue]
@@ -15,7 +18,11 @@ class CoreApiClientInterface(Protocol):
     def shutdown(self) -> None: ...
 
     def get_profiles(
-        self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
+        self,
+        limit: int,
+        offset: int,
+        query: TextQuery | None = None,
+        extra_headers: Optional[dict[str, str]] = None,
     ) -> dict[str, Any]: ...
 
     def get_profile(
@@ -61,10 +68,6 @@ class UserRepository(Protocol):
     def get_by_email(self, email: str) -> User | None: ...
 
     def save(self, user: User) -> None: ...
-
-
-class SystemGateway(Protocol):
-    def is_core_available(self) -> bool: ...
 
 
 class AuditLogRepository(Protocol):
@@ -133,37 +136,23 @@ class Tracer(Protocol):
 
 class ProfileGateway(Protocol):
     def list_profiles(
-        self, limit: int = 50, offset: int = 0
-    ) -> Sequence[ProfileDTO]: ...
+        self, pagination: Pagination, query: TextQuery | None = None
+    ) -> Sequence[Profile]: ...
 
-    def get_profile(self, customer_id: str) -> ProfileDTO | None: ...
+    def get_profile(self, customer_id: str) -> Profile | None: ...
 
 
 class SegmentGateway(Protocol):
     def list_segments(
         self, limit: int = 50, offset: int = 0
-    ) -> Sequence[SegmentDTO]: ...
+    ) -> Sequence[Segment]: ...
 
     def get_segment_members(
         self, segment_id: str, limit: int = 50, offset: int = 0
-    ) -> Sequence[ProfileDTO]: ...
+    ) -> Sequence[Profile]: ...
 
 
 class ExportGateway(Protocol):
-    def trigger_export(self, segment_id: str) -> str: ...
-
-
-class JobGateway(Protocol):
-    def list_jobs(self, limit: int = 50, offset: int = 0) -> Sequence[JobDTO]: ...
-
-    def get_job(self, job_id: str) -> JobDTO | None: ...
-
-
-class SystemStatusGateway(Protocol):
-    def get_status(self) -> SystemStatusDTO: ...
-
-
-class AuditGateway(Protocol):
-    def log_action(
-        self, operator_id: str, action: str, target_id: str | None = None
-    ) -> None: ...
+    def trigger_export(
+        self, segment_id: str, actor_id: str, trace_id: str
+    ) -> ExportJob: ...
