@@ -3,10 +3,10 @@ from types import TracebackType
 from typing import Any, Optional, Protocol, TypeAlias
 
 from domain.audit import AuditEntry
-from domain.export_job import ExportJob
-from domain.profile import Profile
+from domain.export_job import ExportJobSummary
+from domain.profile import ProfileDetails, ProfileSummary
 from domain.query import Pagination, TextQuery
-from domain.segment import Segment
+from domain.segment import SegmentSummary
 from domain.user import User
 
 
@@ -137,22 +137,22 @@ class Tracer(Protocol):
 class ProfileGateway(Protocol):
     def list_profiles(
         self, pagination: Pagination, query: TextQuery | None = None
-    ) -> Sequence[Profile]: ...
+    ) -> Sequence[ProfileSummary]: ...
 
-    def get_profile(self, customer_id: str) -> Profile | None: ...
+    def get_profile(self, customer_id: str) -> ProfileDetails | None: ...
 
 
 class SegmentGateway(Protocol):
     def list_segments(
         self, limit: int = 50, offset: int = 0
-    ) -> Sequence[Segment]: ...
+    ) -> Sequence[SegmentSummary]: ...
 
     def get_segment_members(
         self, segment_id: str, limit: int = 50, offset: int = 0
-    ) -> Sequence[Profile]: ...
+    ) -> Sequence[ProfileSummary]: ...
 
 
 class ExportGateway(Protocol):
     def trigger_export(
         self, segment_id: str, actor_id: str, trace_id: str
-    ) -> ExportJob: ...
+    ) -> ExportJobSummary: ...

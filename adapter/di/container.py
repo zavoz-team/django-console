@@ -6,26 +6,22 @@ from adapter.config.loader import load_config
 from adapter.config.model import AppConfig
 from adapter.observability.factory import build_observability
 from adapter.observability.runtime import ObservabilityRuntime
-from repository.core_api.audit import CoreApiAuditGateway
 from repository.core_api.client import CoreApiClient
 from repository.core_api.export import CoreApiExportGateway
-from repository.core_api.job import CoreApiJobGateway
 from repository.core_api.profile import CoreApiProfileGateway
 from repository.core_api.segment import CoreApiSegmentGateway
-from repository.core_api.system_status import CoreApiSystemStatusGateway
 from repository.django.audit_log import DjangoAuditLogRepository
 from repository.django.user import DjangoUserRepository
 from usecase.audit import ListAuditEntries, LogCriticalPageView, LogOperatorAction
+from usecase.export_job import TriggerExport
 from usecase.interface import (
-    AuditGateway,
     AuditLogRepository,
     ExportGateway,
-    JobGateway,
     ProfileGateway,
     SegmentGateway,
-    SystemStatusGateway,
     UserRepository,
 )
+from usecase.profile import GetProfile, ListProfiles
 from usecase.user import GetUser
 
 
@@ -40,14 +36,14 @@ class AppGateways:
     profile: ProfileGateway
     segment: SegmentGateway
     export: ExportGateway
-    job: JobGateway
-    system_status: SystemStatusGateway
-    audit: AuditGateway
 
 
 @dataclass(frozen=True, slots=True)
 class AppUsecases:
     get_user: GetUser
+    get_profile: GetProfile
+    list_profiles: ListProfiles
+    trigger_export: TriggerExport
     log_operator_action: LogOperatorAction
     log_critical_page_view: LogCriticalPageView
     list_audit_entries: ListAuditEntries
@@ -89,6 +85,18 @@ def build_container(
         )
 
     observability = build_observability(app_config)
+    core_api_client = CoreApiClient(
+        config=app_config.core_api, tracer=observability.tracer
+    )
+
+    profile_gateway = CoreApiProfileGateway(client=core_api_client)
+    segment_gateway = CoreApiSegmentGateway(client=core_api_client)
+    export_gateway = CoreApiExportGateway(client=core_api_client)
+    gateways = AppGateways(
+        profile=profile_gateway,
+        segment=segment_gateway,
+        export=export_gateway,
+    )
 
     user_repository = DjangoUserRepository(observability.tracer)
     audit_log_repository = DjangoAuditLogRepository(observability.tracer)
@@ -96,6 +104,7 @@ def build_container(
         user=user_repository,
         audit_log=audit_log_repository,
     )
+
     log_operator_action = LogOperatorAction(
         repository=audit_log_repository,
         logger=observability.logger,
@@ -107,24 +116,27 @@ def build_container(
             logger=observability.logger,
             tracer=observability.tracer,
         ),
+        get_profile=GetProfile(
+            gateway=profile_gateway,
+            logger=observability.logger,
+            tracer=observability.tracer,
+        ),
+        list_profiles=ListProfiles(
+            gateway=profile_gateway,
+            tracer=observability.tracer,
+        ),
+        trigger_export=TriggerExport(
+            gateway=export_gateway,
+            audit_log_repository=audit_log_repository,
+            logger=observability.logger,
+            tracer=observability.tracer,
+        ),
         log_operator_action=log_operator_action,
         log_critical_page_view=LogCriticalPageView(log_operator_action),
         list_audit_entries=ListAuditEntries(
             repository=audit_log_repository,
             tracer=observability.tracer,
         ),
-    )
-    core_api_client = CoreApiClient(
-        config=app_config.core_api, tracer=observability.tracer
-    )
-
-    gateways = AppGateways(
-        profile=CoreApiProfileGateway(client=core_api_client),
-        segment=CoreApiSegmentGateway(client=core_api_client),
-        export=CoreApiExportGateway(client=core_api_client),
-        job=CoreApiJobGateway(client=core_api_client),
-        system_status=CoreApiSystemStatusGateway(client=core_api_client),
-        audit=CoreApiAuditGateway(client=core_api_client),
     )
 
     return AppContainer(

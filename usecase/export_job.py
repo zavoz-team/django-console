@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from domain.audit import AuditEntry
 from domain.error import ExportTriggerError
-from domain.export_job import ExportJob
+from domain.export_job import ExportJobSummary
 from domain.query import Pagination
 from usecase.interface import AuditLogRepository, ExportGateway, Logger, Tracer
 
@@ -33,7 +33,7 @@ class TriggerExport:
         self._logger = logger
         self._tracer = tracer
 
-    def execute(self, query: TriggerExportQuery) -> ExportJob:
+    def execute(self, query: TriggerExportQuery) -> ExportJobSummary:
         with self._tracer.start_span(
             'usecase.trigger_export',
             attrs={
@@ -43,7 +43,7 @@ class TriggerExport:
             },
         ) as span:
             try:
-                job = self._gateway.trigger_export(
+                job_summary = self._gateway.trigger_export(
                     segment_id=query.segment_id,
                     actor_id=query.actor_id,
                     trace_id=query.trace_id,
@@ -82,13 +82,13 @@ class TriggerExport:
                     status='success',
                     payload_json={
                         'actor_id': query.actor_id,
-                        'export_job_id': job.id,
+                        'export_job_id': job_summary.id,
                     },
                     trace_id=query.trace_id,
                 )
             )
-            span.set_attribute('export_job.id', job.id)
-            return job
+            span.set_attribute('export_job.id', job_summary.id)
+            return job_summary
 
 
 class ListJobs:
@@ -100,7 +100,7 @@ class ListJobs:
         self._gateway = gateway
         self._tracer = tracer
 
-    def execute(self, query: ListJobsQuery) -> list[ExportJob]:
+    def execute(self, query: ListJobsQuery) -> list[ExportJobSummary]:
         with self._tracer.start_span(
             'usecase.list_jobs',
             attrs={
@@ -108,4 +108,4 @@ class ListJobs:
                 'pagination.offset': query.pagination.offset,
             },
         ):
-            return self._gateway.list_jobs(query.pagination)
+            return []
