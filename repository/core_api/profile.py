@@ -1,35 +1,44 @@
 from collections.abc import Sequence
+from datetime import datetime
 
-from repository.core_api.client import CoreApiClient
+from domain.profile import Profile, ProfileStatus
 from repository.core_api.dto import CoreApiProfileDTO
-from repository.core_api.errors import CoreApiNotFoundError
-from usecase.dto import ProfileDTO
-from usecase.interface import ProfileGateway
+from repository.core_api.errors import CoreApiDataError, CoreApiNotFoundError
+from usecase.interface import CoreApiClientInterface
 
 
-def _to_profile_dto(core_dto: CoreApiProfileDTO) -> ProfileDTO:
-    return ProfileDTO(id=core_dto.id, name=core_dto.name)
+def _to_domain_profile(dto: CoreApiProfileDTO) -> Profile:
+    try:
+        return Profile(
+            id=dto.id,
+            email=dto.email,
+            name=dto.name,
+            created_at=datetime.fromisoformat(dto.created_at),
+            updated_at=datetime.fromisoformat(dto.updated_at),
+            status=ProfileStatus(dto.status),
+            custom_fields=dto.custom_fields,
+        )
+    except (ValueError, TypeError) as exc:
+        raise CoreApiDataError(f"Invalid profile data: {exc}") from exc
 
 
-class CoreApiProfileGateway(ProfileGateway):
-    def __init__(self, client: CoreApiClient) -> None:
+class CoreApiProfileGateway:
+    def __init__(self, client: CoreApiClientInterface) -> None:
         self._client = client
 
-    def list_profiles(self, limit: int = 50, offset: int = 0) -> Sequence[ProfileDTO]:
+    def list_profiles(self, limit: int = 50, offset: int = 0) -> Sequence[Profile]:
         response_data = self._client.get_profiles(limit=limit, offset=offset)
+        profiles_data = response_data.get("profiles", [])
+        if not isinstance(profiles_data, list):
+            raise CoreApiDataError("Invalid profiles list format")
 
-        profiles = []
-        if isinstance(response_data, list):
-            for item in response_data:
-                core_dto = CoreApiProfileDTO(**item)
-                profiles.append(_to_profile_dto(core_dto))
+        return [_to_domain_profile(CoreApiProfileDTO(**item)) for item in profiles_data]
 
-        return profiles
-
-    def get_profile(self, customer_id: str) -> ProfileDTO | None:
+    def get_profile(self, customer_id: str) -> Profile | None:
         try:
             response_data = self._client.get_profile(customer_id)
-            core_dto = CoreApiProfileDTO(**response_data)
-            return _to_profile_dto(core_dto)
+            if not response_data:
+                return None
+            return _to_domain_profile(CoreApiProfileDTO(**response_data))
         except CoreApiNotFoundError:
             return None

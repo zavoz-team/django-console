@@ -1,16 +1,29 @@
-from repository.core_api.client import CoreApiClient
-from usecase.interface import ExportGateway
+from datetime import datetime
+
+from domain.export_job import ExportJob, ExportJobStatus
+from repository.core_api.dto import CoreApiExportJobDTO
+from repository.core_api.errors import CoreApiDataError
+from usecase.interface import CoreApiClientInterface
 
 
-class CoreApiExportGateway(ExportGateway):
-    def __init__(self, client: CoreApiClient) -> None:
+def _to_domain_export_job(dto: CoreApiExportJobDTO) -> ExportJob:
+    try:
+        return ExportJob(
+            id=dto.id,
+            segment_id=dto.segment_id,
+            status=ExportJobStatus(dto.status),
+            created_at=datetime.fromisoformat(dto.created_at),
+            updated_at=datetime.fromisoformat(dto.updated_at),
+            completed_at=datetime.fromisoformat(dto.completed_at) if dto.completed_at else None,
+        )
+    except (ValueError, TypeError) as exc:
+        raise CoreApiDataError(f"Invalid export job data: {exc}") from exc
+
+
+class CoreApiExportGateway:
+    def __init__(self, client: CoreApiClientInterface) -> None:
         self._client = client
 
-    def trigger_export(self, segment_id: str) -> str:
+    def trigger_export(self, segment_id: str) -> ExportJob:
         response_data = self._client.trigger_export(segment_id)
-
-        job_id = response_data.get("job_id")
-        if not isinstance(job_id, str):
-            raise TypeError("Expected 'job_id' to be a string")
-
-        return job_id
+        return _to_domain_export_job(CoreApiExportJobDTO(**response_data))

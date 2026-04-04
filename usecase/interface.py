@@ -1,6 +1,6 @@
 from collections.abc import Mapping, Sequence
 from types import TracebackType
-from typing import Protocol, TypeAlias
+from typing import Any, Optional, Protocol, TypeAlias
 
 from domain.audit import AuditEntry
 from domain.query import Pagination
@@ -9,6 +9,50 @@ from usecase.dto import JobDTO, ProfileDTO, SegmentDTO, SystemStatusDTO
 
 AttrValue: TypeAlias = str | int | float | bool
 Attrs: TypeAlias = Mapping[str, AttrValue]
+
+
+class CoreApiClientInterface(Protocol):
+    def shutdown(self) -> None: ...
+
+    def get_profiles(
+        self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]: ...
+
+    def get_profile(
+        self, customer_id: str, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]: ...
+
+    def get_segments(
+        self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]: ...
+
+    def get_segment_members(
+        self,
+        segment_id: str,
+        limit: int,
+        offset: int,
+        extra_headers: Optional[dict[str, str]] = None,
+    ) -> dict[str, Any]: ...
+
+    def trigger_export(
+        self, segment_id: str, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]: ...
+
+    def get_jobs(
+        self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]: ...
+
+    def get_job(
+        self, job_id: str, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]: ...
+
+    def get_system_status(
+        self, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]: ...
+
+    def log_audit_action(
+        self, payload: dict[str, Any], extra_headers: Optional[dict[str, str]] = None
+    ) -> None: ...
 
 
 class UserRepository(Protocol):
