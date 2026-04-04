@@ -30,15 +30,11 @@ class CoreApiProfileGateway:
     def list_profiles(
         self, pagination: Pagination, query: TextQuery | None = None
     ) -> Sequence[Profile]:
-        response_data = self._client.get_profiles(
+        profiles_data = self._client.get_profiles(
             limit=pagination.limit,
             offset=pagination.offset,
             query=query,
         )
-        profiles_data = response_data.get("profiles", [])
-        if not isinstance(profiles_data, list):
-            raise CoreApiDataError("Invalid profiles list format")
-
         return [_to_domain_profile(CoreApiProfileDTO(**item)) for item in profiles_data]
 
     def get_profile(self, customer_id: str) -> Profile | None:

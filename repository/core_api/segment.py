@@ -26,21 +26,13 @@ class CoreApiSegmentGateway:
         self._client = client
 
     def list_segments(self, limit: int = 50, offset: int = 0) -> Sequence[Segment]:
-        response_data = self._client.get_segments(limit=limit, offset=offset)
-        segments_data = response_data.get("segments", [])
-        if not isinstance(segments_data, list):
-            raise CoreApiDataError("Invalid segments list format")
-
+        segments_data = self._client.get_segments(limit=limit, offset=offset)
         return [_to_domain_segment(CoreApiSegmentDTO(**item)) for item in segments_data]
 
     def get_segment_members(
         self, segment_id: str, limit: int = 50, offset: int = 0
     ) -> Sequence[Profile]:
-        response_data = self._client.get_segment_members(
+        members_data = self._client.get_segment_members(
             segment_id=segment_id, limit=limit, offset=offset
         )
-        members_data = response_data.get("members", [])
-        if not isinstance(members_data, list):
-            raise CoreApiDataError("Invalid segment members list format")
-
         return [_to_domain_profile(CoreApiProfileDTO(**item)) for item in members_data]

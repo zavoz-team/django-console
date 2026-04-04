@@ -23,7 +23,7 @@ class CoreApiClientInterface(Protocol):
         offset: int,
         query: TextQuery | None = None,
         extra_headers: Optional[dict[str, str]] = None,
-    ) -> dict[str, Any]: ...
+    ) -> list[dict[str, Any]]: ...
 
     def get_profile(
         self, customer_id: str, extra_headers: Optional[dict[str, str]] = None
@@ -31,7 +31,7 @@ class CoreApiClientInterface(Protocol):
 
     def get_segments(
         self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
-    ) -> dict[str, Any]: ...
+    ) -> list[dict[str, Any]]: ...
 
     def get_segment_members(
         self,
@@ -39,7 +39,7 @@ class CoreApiClientInterface(Protocol):
         limit: int,
         offset: int,
         extra_headers: Optional[dict[str, str]] = None,
-    ) -> dict[str, Any]: ...
+    ) -> list[dict[str, Any]]: ...
 
     def trigger_export(
         self, segment_id: str, extra_headers: Optional[dict[str, str]] = None
@@ -47,7 +47,7 @@ class CoreApiClientInterface(Protocol):
 
     def get_jobs(
         self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
-    ) -> dict[str, Any]: ...
+    ) -> list[dict[str, Any]]: ...
 
     def get_job(
         self, job_id: str, extra_headers: Optional[dict[str, str]] = None

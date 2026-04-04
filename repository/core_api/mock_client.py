@@ -2,7 +2,6 @@ from typing import Any, Optional
 
 from domain.query import TextQuery
 from repository.core_api.errors import CoreApiNotFoundError
-from usecase.dto import SystemStatusDTO
 
 
 class MockCoreApiClient:
@@ -22,7 +21,7 @@ class MockCoreApiClient:
         offset: int,
         query: TextQuery | None = None,
         extra_headers: Optional[dict[str, str]] = None,
-    ) -> dict[str, Any]:
+    ) -> list[dict[str, Any]]:
         if self.should_throw_not_found:
             raise CoreApiNotFoundError("Profiles not found")
 
@@ -35,7 +34,7 @@ class MockCoreApiClient:
                 or query.value.lower() in p.get("email", "").lower()
             ]
 
-        return {"profiles": filtered_profiles[offset : offset + limit]}
+        return filtered_profiles[offset : offset + limit]
 
     def get_profile(
         self, customer_id: str, extra_headers: Optional[dict[str, str]] = None
@@ -49,10 +48,10 @@ class MockCoreApiClient:
 
     def get_segments(
         self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
-    ) -> dict[str, Any]:
+    ) -> list[dict[str, Any]]:
         if self.should_throw_not_found:
             raise CoreApiNotFoundError("Segments not found")
-        return {"segments": self.segments[offset : offset + limit]}
+        return self.segments[offset : offset + limit]
 
     def get_segment_members(
         self,
@@ -60,10 +59,13 @@ class MockCoreApiClient:
         limit: int,
         offset: int,
         extra_headers: Optional[dict[str, str]] = None,
-    ) -> dict[str, Any]:
+    ) -> list[dict[str, Any]]:
         if self.should_throw_not_found:
             raise CoreApiNotFoundError(f"Segment {segment_id} not found")
-        return {"members": [{"profile_id": p["id"]} for p in self.profiles]}
+        # This is a simplified mock, returning profiles as members
+        return [p for p in self.profiles if p.get("segment_id") == segment_id][
+            offset : offset + limit
+        ]
 
     def trigger_export(
         self, segment_id: str, extra_headers: Optional[dict[str, str]] = None
@@ -76,10 +78,10 @@ class MockCoreApiClient:
 
     def get_jobs(
         self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
-    ) -> dict[str, Any]:
+    ) -> list[dict[str, Any]]:
         if self.should_throw_not_found:
             raise CoreApiNotFoundError("Jobs not found")
-        return {"jobs": self.jobs[offset : offset + limit]}
+        return self.jobs[offset : offset + limit]
 
     def get_job(
         self, job_id: str, extra_headers: Optional[dict[str, str]] = None
@@ -100,12 +102,3 @@ class MockCoreApiClient:
         self, payload: dict[str, Any], extra_headers: Optional[dict[str, str]] = None
     ) -> None:
         self.audit_logs.append(payload)
-
-
-class MockCoreApiSystemStatusGateway:
-    def __init__(self, client: MockCoreApiClient) -> None:
-        self._client = client
-
-    def get_status(self) -> SystemStatusDTO:
-        response_data = self._client.get_system_status()
-        return SystemStatusDTO(**response_data)
