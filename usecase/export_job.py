@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from domain.audit import AuditEntry
-from domain.error import ExportTriggerError
+from domain.error import CoreUnavailableError, ExportTriggerError
 from domain.export_job import ExportJobSummary
 from domain.query import Pagination
 from usecase.interface import AuditLogRepository, ExportGateway, Logger, Tracer
@@ -43,7 +43,7 @@ class TriggerExport:
             },
         ) as span:
             try:
-                job = self._gateway.trigger_export(
+                job_summary = self._gateway.trigger_export(
                     segment_id=query.segment_id,
                     destination=query.destination,
                 )
@@ -83,13 +83,13 @@ class TriggerExport:
                     payload_json={
                         'destination': query.destination,
                         'actor_id': query.actor_id or '',
-                        'export_job_id': job.id,
+                        'export_job_id': job_summary.id,
                     },
                     trace_id=query.trace_id,
                 )
             )
-            span.set_attribute('export_job.id', job.id)
-            return job
+            span.set_attribute('export_job.id', job_summary.id)
+            return job_summary
 
 
 class ListJobs:
@@ -108,5 +108,9 @@ class ListJobs:
                 'pagination.limit': query.pagination.limit,
                 'pagination.offset': query.pagination.offset,
             },
-        ):
-            return self._gateway.list_jobs(query.pagination)
+        ) as span:
+            try:
+                return self._gateway.list_jobs(query.pagination)
+            except Exception as exc:
+                span.record_error(exc)
+                raise CoreUnavailableError() from exc

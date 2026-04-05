@@ -4,7 +4,10 @@ from django.shortcuts import render
 from django.views.decorators.http import require_GET
 
 from adapter.http.django.forms import JobsFilterForm
-from adapter.http.django.presenters import ui_context, ui_errors
+from adapter.http.django.presenters import job_rows, ui_context, ui_errors
+from adapter.http.django.runtime import get_container
+from domain.error import CoreUnavailableError
+from usecase.export_job import ListJobsQuery
 
 
 @login_required
@@ -17,10 +20,23 @@ def jobs_page(request: HttpRequest) -> HttpResponse:
             errors=ui_errors(form),
             form=form,
         )
-        return render(request, 'backoffice/unavailable.html', context, status=400)
+        return render(request, 'backoffice/jobs.html', context, status=400)
+
+    try:
+        jobs = get_container().usecases.list_jobs.execute(
+            ListJobsQuery(pagination=form.pagination())
+        )
+    except CoreUnavailableError:
+        context = ui_context(
+            title='Jobs',
+            errors=ui_errors(messages=('unavailable',)),
+            form=form,
+        )
+        return render(request, 'backoffice/jobs.html', context, status=503)
+
     context = ui_context(
         title='Jobs',
-        message='usecase wiring pending',
         form=form,
+        extra={'rows': job_rows(list(jobs))},
     )
-    return render(request, 'backoffice/unavailable.html', context, status=503)
+    return render(request, 'backoffice/jobs.html', context)

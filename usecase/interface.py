@@ -1,6 +1,6 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from types import TracebackType
-from typing import Protocol, TypeAlias
+from typing import Any, Optional, Protocol, TypeAlias
 
 from domain.audit import AuditEntry
 from domain.export_job import ExportJobSummary
@@ -9,8 +9,60 @@ from domain.query import Pagination, TextQuery
 from domain.segment import SegmentMember, SegmentSummary
 from domain.user import User
 
+
 AttrValue: TypeAlias = str | int | float | bool
 Attrs: TypeAlias = Mapping[str, AttrValue]
+
+
+class CoreApiClientInterface(Protocol):
+    def shutdown(self) -> None: ...
+
+    def get_profiles(
+        self,
+        limit: int,
+        offset: int,
+        query: TextQuery | None = None,
+        extra_headers: Optional[dict[str, str]] = None,
+    ) -> list[dict[str, Any]]: ...
+
+    def get_profile(
+        self, customer_id: str, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]: ...
+
+    def get_segments(
+        self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
+    ) -> list[dict[str, Any]]: ...
+
+    def get_segment_members(
+        self,
+        segment_id: str,
+        limit: int,
+        offset: int,
+        extra_headers: Optional[dict[str, str]] = None,
+    ) -> list[dict[str, Any]]: ...
+
+    def trigger_export(
+        self,
+        segment_id: str,
+        destination: str,
+        extra_headers: Optional[dict[str, str]] = None,
+    ) -> dict[str, Any]: ...
+
+    def get_jobs(
+        self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
+    ) -> list[dict[str, Any]]: ...
+
+    def get_job(
+        self, job_id: str, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]: ...
+
+    def get_system_status(
+        self, extra_headers: Optional[dict[str, str]] = None
+    ) -> dict[str, Any]: ...
+
+    def log_audit_action(
+        self, payload: dict[str, Any], extra_headers: Optional[dict[str, str]] = None
+    ) -> None: ...
 
 
 class UserRepository(Protocol):
@@ -19,10 +71,6 @@ class UserRepository(Protocol):
     def get_by_email(self, email: str) -> User | None: ...
 
     def save(self, user: User) -> None: ...
-
-
-class SystemGateway(Protocol):
-    def is_core_available(self) -> bool: ...
 
 
 class AuditLogRepository(Protocol):
@@ -90,15 +138,15 @@ class Tracer(Protocol):
 
 
 class ProfileGateway(Protocol):
-    def list(
+    def list_profiles(
         self, pagination: Pagination, query: TextQuery | None = None
-    ) -> list[ProfileSummary]: ...
+    ) -> Sequence[ProfileSummary]: ...
 
-    def get(self, profile_id: str) -> ProfileDetails | None: ...
+    def get_profile(self, customer_id: str) -> ProfileDetails | None: ...
 
 
 class SegmentGateway(Protocol):
-    def list_segments(self, pagination: Pagination) -> list[SegmentSummary]: ...
+    def list_segments(self, pagination: Pagination) -> Sequence[SegmentSummary]: ...
 
     def list_members(
         self, segment_id: str, pagination: Pagination
@@ -109,3 +157,7 @@ class ExportGateway(Protocol):
     def trigger_export(self, segment_id: str, destination: str) -> ExportJobSummary: ...
 
     def list_jobs(self, pagination: Pagination) -> list[ExportJobSummary]: ...
+
+
+class SystemGateway(Protocol):
+    def is_core_available(self) -> bool: ...

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from domain.error import ProfileNotFoundError
+from domain.error import CoreUnavailableError, ProfileNotFoundError
 from domain.profile import ProfileDetails, ProfileSummary
 from domain.query import Pagination, TextQuery
 from usecase.interface import Logger, ProfileGateway, Tracer
@@ -33,7 +33,16 @@ class GetProfile:
             'usecase.get_profile',
             attrs={'profile.id': query.profile_id},
         ) as span:
-            profile = self._gateway.get(query.profile_id)
+            try:
+                profile = self._gateway.get_profile(query.profile_id)
+            except Exception as exc:
+                error = CoreUnavailableError()
+                span.record_error(exc)
+                self._logger.error(
+                    'core_unavailable',
+                    attrs={'profile_id': query.profile_id},
+                )
+                raise error from exc
             if profile is None:
                 error = ProfileNotFoundError(query.profile_id)
                 span.record_error(error)
@@ -61,9 +70,14 @@ class ListProfiles:
             attrs={
                 'pagination.limit': query.pagination.limit,
                 'pagination.offset': query.pagination.offset,
+                'query': query.query.value if query.query else '',
             },
-        ):
-            return self._gateway.list(
-                pagination=query.pagination,
-                query=query.query,
-            )
+        ) as span:
+            try:
+                return self._gateway.list_profiles(
+                    pagination=query.pagination,
+                    query=query.query,
+                )
+            except Exception as exc:
+                span.record_error(exc)
+                raise CoreUnavailableError() from exc

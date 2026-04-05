@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ title }}</title>
+</head>
+<body>
+    <main>
+        <h1>{{ title }}</h1>
+        {% include 'backoffice/error.html' %}
+        {% if details %}
+        <dl>
+            {% for item in details %}
+            <dt>{{ item.label }}</dt>
+            <dd>{{ item.value }}</dd>
+            {% endfor %}
+        </dl>
+        {% endif %}
+        <form method="get">
+            {{ form.as_p }}
+            <button type="submit">Apply</button>
+        </form>
+        {% if rows %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Segment</th>
+                    <th>Profile</th>
+                    <th>Added</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in rows %}
+                <tr>
+                    <td>{{ row.segment_id }}</td>
+                    <td>{{ row.profile_id }}</td>
+                    <td>{{ row.added_at }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>empty</p>
+        {% endif %}
+    </main>
+</body>
+</html>
