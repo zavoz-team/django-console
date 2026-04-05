@@ -42,12 +42,21 @@ def profiles_page(request: HttpRequest) -> HttpResponse:
         return render(request, 'backoffice/profiles.html', context, status=400)
 
     query = _profile_query(form) if valid else None
-    profiles = get_container().usecases.list_profiles.execute(
-        ListProfilesQuery(
-            pagination=form.pagination(),
-            query=query,
+    try:
+        profiles = get_container().usecases.list_profiles.execute(
+            ListProfilesQuery(
+                pagination=form.pagination(),
+                query=query,
+            )
         )
-    )
+    except CoreUnavailableError:
+        context = ui_context(
+            title='Profiles',
+            errors=ui_errors(messages=('unavailable',)),
+            form=form,
+        )
+        return render(request, 'backoffice/profiles.html', context, status=503)
+
     context = ui_context(
         title='Profiles',
         form=form,
@@ -81,6 +90,13 @@ def profile_page(request: HttpRequest, customer_id: str) -> HttpResponse:
     item = profile_detail(profile)
     context = ui_context(
         title='Profile',
+        values={
+            'customer_id': item.id,
+            'display_name': item.display_name,
+            'email': item.email,
+            'phone': item.phone,
+            'updated_at': item.updated_at,
+        },
         extra={'profile': item},
     )
     return render(request, 'backoffice/profile.html', context)

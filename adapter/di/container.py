@@ -8,19 +8,17 @@ from adapter.observability.factory import build_observability
 from adapter.observability.runtime import ObservabilityRuntime
 from repository.core_api.client import CoreApiClient
 from repository.core_api.export import CoreApiExportGateway
+from repository.core_api.mock_client import MockCoreApiClient
 from repository.core_api.profile import CoreApiProfileGateway
 from repository.core_api.segment import CoreApiSegmentGateway
 from repository.core_api.system import CoreApiSystemGateway
 from repository.django.audit_log import DjangoAuditLogRepository
 from repository.django.user import DjangoUserRepository
-from usecase.audit import (
-    ListAuditEntries,
-    LogCriticalPageView,
-    LogOperatorAction,
-)
+from usecase.audit import ListAuditEntries, LogCriticalPageView, LogOperatorAction
 from usecase.export_job import ListJobs, TriggerExport
 from usecase.interface import (
     AuditLogRepository,
+    CoreApiClientInterface,
     ExportGateway,
     ProfileGateway,
     SegmentGateway,
@@ -29,6 +27,7 @@ from usecase.interface import (
 )
 from usecase.profile import GetProfile, ListProfiles
 from usecase.segment import GetSegmentMembers, ListSegments
+from usecase.user import GetUser
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,8 +46,9 @@ class AppGateways:
 
 @dataclass(frozen=True, slots=True)
 class AppUsecases:
-    list_profiles: ListProfiles
+    get_user: GetUser
     get_profile: GetProfile
+    list_profiles: ListProfiles
     list_segments: ListSegments
     get_segment_members: GetSegmentMembers
     trigger_export: TriggerExport
@@ -62,7 +62,7 @@ class AppUsecases:
 class AppContainer:
     config: AppConfig
     observability: ObservabilityRuntime
-    core_api_client: CoreApiClient
+    core_api_client: CoreApiClientInterface
     repositories: AppRepositories
     gateways: AppGateways
     usecases: AppUsecases
@@ -77,6 +77,80 @@ class AppContainer:
             self.observability.shutdown()
         finally:
             self._is_shutdown = True
+
+
+def _build_core_api_client(
+    config: AppConfig,
+    tracer,
+) -> CoreApiClientInterface:
+    if config.app.env == 'mock':
+        client = MockCoreApiClient()
+        _seed_mock_client(client)
+        return client
+    return CoreApiClient(config=config.core_api, tracer=tracer)
+
+
+def _seed_mock_client(client: MockCoreApiClient) -> None:
+    client.profiles = [
+        {
+            'id': 'cust-1',
+            'email': 'alex@example.com',
+            'name': 'Alex Stone',
+            'created_at': '2026-01-10T10:00:00',
+            'updated_at': '2026-02-10T11:30:00',
+            'status': 'active',
+            'custom_fields': {
+                'external_id': 'ext-100',
+                'segment': 'vip',
+                'segment_id': 'seg-1',
+            },
+        },
+        {
+            'id': 'cust-2',
+            'email': 'maria@example.com',
+            'name': 'Maria Fox',
+            'created_at': '2026-01-11T12:00:00',
+            'updated_at': '2026-02-11T09:15:00',
+            'status': 'active',
+            'custom_fields': {
+                'external_id': 'ext-101',
+                'segment': 'trial',
+                'segment_id': 'seg-2',
+            },
+        },
+    ]
+    client.segments = [
+        {
+            'id': 'seg-1',
+            'name': 'VIP',
+            'status': 'active',
+            'created_at': '2026-01-01T08:00:00',
+        },
+        {
+            'id': 'seg-2',
+            'name': 'Trial',
+            'status': 'active',
+            'created_at': '2026-01-05T08:00:00',
+        },
+    ]
+    client.jobs = [
+        {
+            'id': 'job-1',
+            'segment_id': 'seg-1',
+            'status': 'done',
+            'created_at': '2026-02-12T10:00:00',
+            'updated_at': '2026-02-12T10:05:00',
+            'completed_at': '2026-02-12T10:05:00',
+        },
+        {
+            'id': 'job-2',
+            'segment_id': 'seg-2',
+            'status': 'running',
+            'created_at': '2026-02-13T14:00:00',
+            'updated_at': '2026-02-13T14:10:00',
+            'completed_at': None,
+        },
+    ]
 
 
 def build_container(
@@ -94,9 +168,19 @@ def build_container(
         )
 
     observability = build_observability(app_config)
+    core_api_client = _build_core_api_client(
+        config=app_config,
+        tracer=observability.tracer,
+    )
 
-    core_api_client = CoreApiClient(
-        config=app_config.core_api, tracer=observability.tracer
+    profile_gateway = CoreApiProfileGateway(client=core_api_client)
+    segment_gateway = CoreApiSegmentGateway(client=core_api_client)
+    export_gateway = CoreApiExportGateway(client=core_api_client)
+    gateways = AppGateways(
+        profile=profile_gateway,
+        segment=segment_gateway,
+        export=export_gateway,
+        system=CoreApiSystemGateway(client=core_api_client),
     )
 
     user_repository = DjangoUserRepository(tracer=observability.tracer)
@@ -107,51 +191,46 @@ def build_container(
         audit_log=audit_log_repository,
     )
 
-    gateways = AppGateways(
-        profile=CoreApiProfileGateway(client=core_api_client),
-        segment=CoreApiSegmentGateway(client=core_api_client),
-        export=CoreApiExportGateway(client=core_api_client),
-        system=CoreApiSystemGateway(client=core_api_client),
-    )
-
     log_operator_action = LogOperatorAction(
         repository=audit_log_repository,
         logger=observability.logger,
         tracer=observability.tracer,
     )
-
     usecases = AppUsecases(
-        list_profiles=ListProfiles(
-            gateway=gateways.profile,
-            tracer=observability.tracer,
-        ),
-        get_profile=GetProfile(
-            gateway=gateways.profile,
+        get_user=GetUser(
+            repository=user_repository,
             logger=observability.logger,
             tracer=observability.tracer,
         ),
+        get_profile=GetProfile(
+            gateway=profile_gateway,
+            logger=observability.logger,
+            tracer=observability.tracer,
+        ),
+        list_profiles=ListProfiles(
+            gateway=profile_gateway,
+            tracer=observability.tracer,
+        ),
         list_segments=ListSegments(
-            gateway=gateways.segment,
+            gateway=segment_gateway,
             tracer=observability.tracer,
         ),
         get_segment_members=GetSegmentMembers(
-            gateway=gateways.segment,
+            gateway=segment_gateway,
             tracer=observability.tracer,
         ),
         trigger_export=TriggerExport(
-            gateway=gateways.export,
+            gateway=export_gateway,
             audit_log_repository=audit_log_repository,
             logger=observability.logger,
             tracer=observability.tracer,
         ),
         list_jobs=ListJobs(
-            gateway=gateways.export,
+            gateway=export_gateway,
             tracer=observability.tracer,
         ),
         log_operator_action=log_operator_action,
-        log_critical_page_view=LogCriticalPageView(
-            log_operator_action=log_operator_action
-        ),
+        log_critical_page_view=LogCriticalPageView(log_operator_action),
         list_audit_entries=ListAuditEntries(
             repository=audit_log_repository,
             tracer=observability.tracer,

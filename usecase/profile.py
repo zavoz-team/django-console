@@ -34,7 +34,7 @@ class GetProfile:
             attrs={'profile.id': query.profile_id},
         ) as span:
             try:
-                profile = self._gateway.get(query.profile_id)
+                profile = self._gateway.get_profile(query.profile_id)
             except Exception as exc:
                 error = CoreUnavailableError()
                 span.record_error(exc)
@@ -70,10 +70,11 @@ class ListProfiles:
             attrs={
                 'pagination.limit': query.pagination.limit,
                 'pagination.offset': query.pagination.offset,
+                'query': query.query.value if query.query else '',
             },
         ) as span:
             try:
-                return self._gateway.list(
+                return self._gateway.list_profiles(
                     pagination=query.pagination,
                     query=query.query,
                 )

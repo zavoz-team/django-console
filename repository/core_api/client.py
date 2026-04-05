@@ -5,6 +5,7 @@ from typing import Any, Optional
 import httpx
 
 from adapter.config.model import CoreApiConfig
+from domain.query import TextQuery
 from repository.core_api.errors import (
     CoreApiDataError,
     CoreApiError,
@@ -100,14 +101,25 @@ class CoreApiClient:
                     raise CoreApiError(f"An unexpected error occurred: {exc}") from exc
 
     def get_profiles(
-        self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
-    ) -> dict[str, Any]:
-        return self._request(
+        self,
+        limit: int,
+        offset: int,
+        query: TextQuery | None = None,
+        extra_headers: Optional[dict[str, str]] = None,
+    ) -> list[dict[str, Any]]:
+        params: dict[str, Any] = {"limit": limit, "offset": offset}
+        if query:
+            params["q"] = query.value
+        response_data = self._request(
             "GET",
             "/api/v1/profiles",
-            params={"limit": limit, "offset": offset},
+            params=params,
             extra_headers=extra_headers,
         )
+        profiles = response_data.get("profiles")
+        if not isinstance(profiles, list):
+            raise CoreApiDataError("Invalid profiles list format")
+        return profiles
 
     def get_profile(
         self, customer_id: str, extra_headers: Optional[dict[str, str]] = None
@@ -118,13 +130,17 @@ class CoreApiClient:
 
     def get_segments(
         self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
-    ) -> dict[str, Any]:
-        return self._request(
+    ) -> list[dict[str, Any]]:
+        response_data = self._request(
             "GET",
             "/api/v1/segments",
             params={"limit": limit, "offset": offset},
             extra_headers=extra_headers,
         )
+        segments = response_data.get("segments")
+        if not isinstance(segments, list):
+            raise CoreApiDataError("Invalid segments list format")
+        return segments
 
     def get_segment_members(
         self,
@@ -132,13 +148,17 @@ class CoreApiClient:
         limit: int,
         offset: int,
         extra_headers: Optional[dict[str, str]] = None,
-    ) -> dict[str, Any]:
-        return self._request(
+    ) -> list[dict[str, Any]]:
+        response_data = self._request(
             "GET",
             f"/api/v1/segments/{segment_id}/members",
             params={"limit": limit, "offset": offset},
             extra_headers=extra_headers,
         )
+        members = response_data.get("members")
+        if not isinstance(members, list):
+            raise CoreApiDataError("Invalid segment members list format")
+        return members
 
     def trigger_export(
         self,
@@ -158,13 +178,17 @@ class CoreApiClient:
 
     def get_jobs(
         self, limit: int, offset: int, extra_headers: Optional[dict[str, str]] = None
-    ) -> dict[str, Any]:
-        return self._request(
+    ) -> list[dict[str, Any]]:
+        response_data = self._request(
             "GET",
             "/api/v1/jobs",
             params={"limit": limit, "offset": offset},
             extra_headers=extra_headers,
         )
+        jobs = response_data.get("jobs")
+        if not isinstance(jobs, list):
+            raise CoreApiDataError("Invalid jobs list format")
+        return jobs
 
     def get_job(
         self, job_id: str, extra_headers: Optional[dict[str, str]] = None

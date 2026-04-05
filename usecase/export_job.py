@@ -43,7 +43,7 @@ class TriggerExport:
             },
         ) as span:
             try:
-                job = self._gateway.trigger_export(
+                job_summary = self._gateway.trigger_export(
                     segment_id=query.segment_id,
                     destination=query.destination,
                 )
@@ -83,13 +83,13 @@ class TriggerExport:
                     payload_json={
                         'destination': query.destination,
                         'actor_id': query.actor_id or '',
-                        'export_job_id': job.id,
+                        'export_job_id': job_summary.id,
                     },
                     trace_id=query.trace_id,
                 )
             )
-            span.set_attribute('export_job.id', job.id)
-            return job
+            span.set_attribute('export_job.id', job_summary.id)
+            return job_summary
 
 
 class ListJobs:

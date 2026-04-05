@@ -35,7 +35,7 @@ class ListSegments:
             },
         ) as span:
             try:
-                return self._gateway.list_segments(query.pagination)
+                return list(self._gateway.list_segments(query.pagination))
             except Exception as exc:
                 span.record_error(exc)
                 raise CoreUnavailableError() from exc
@@ -69,4 +69,4 @@ class GetSegmentMembers:
                 raise CoreUnavailableError() from exc
             if members is None:
                 raise SegmentNotFoundError(query.segment_id)
-            return members
+            return list(members)
