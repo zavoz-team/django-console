@@ -84,73 +84,8 @@ def _build_core_api_client(
     tracer,
 ) -> CoreApiClientInterface:
     if config.app.env == 'mock':
-        client = MockCoreApiClient()
-        _seed_mock_client(client)
-        return client
+        return MockCoreApiClient()
     return CoreApiClient(config=config.core_api, tracer=tracer)
-
-
-def _seed_mock_client(client: MockCoreApiClient) -> None:
-    client.profiles = [
-        {
-            'id': 'cust-1',
-            'email': 'alex@example.com',
-            'name': 'Alex Stone',
-            'created_at': '2026-01-10T10:00:00',
-            'updated_at': '2026-02-10T11:30:00',
-            'status': 'active',
-            'custom_fields': {
-                'external_id': 'ext-100',
-                'segment': 'vip',
-                'segment_id': 'seg-1',
-            },
-        },
-        {
-            'id': 'cust-2',
-            'email': 'maria@example.com',
-            'name': 'Maria Fox',
-            'created_at': '2026-01-11T12:00:00',
-            'updated_at': '2026-02-11T09:15:00',
-            'status': 'active',
-            'custom_fields': {
-                'external_id': 'ext-101',
-                'segment': 'trial',
-                'segment_id': 'seg-2',
-            },
-        },
-    ]
-    client.segments = [
-        {
-            'id': 'seg-1',
-            'name': 'VIP',
-            'status': 'active',
-            'created_at': '2026-01-01T08:00:00',
-        },
-        {
-            'id': 'seg-2',
-            'name': 'Trial',
-            'status': 'active',
-            'created_at': '2026-01-05T08:00:00',
-        },
-    ]
-    client.jobs = [
-        {
-            'id': 'job-1',
-            'segment_id': 'seg-1',
-            'status': 'done',
-            'created_at': '2026-02-12T10:00:00',
-            'updated_at': '2026-02-12T10:05:00',
-            'completed_at': '2026-02-12T10:05:00',
-        },
-        {
-            'id': 'job-2',
-            'segment_id': 'seg-2',
-            'status': 'running',
-            'created_at': '2026-02-13T14:00:00',
-            'updated_at': '2026-02-13T14:10:00',
-            'completed_at': None,
-        },
-    ]
 
 
 def build_container(
