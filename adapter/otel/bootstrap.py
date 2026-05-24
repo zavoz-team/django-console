@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+import opentelemetry.metrics as otel_metrics
+import opentelemetry.trace as otel_trace
 from opentelemetry.exporter.otlp.proto.http._log_exporter import OTLPLogExporter
 from opentelemetry.exporter.otlp.proto.http.metric_exporter import OTLPMetricExporter
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
@@ -83,6 +85,7 @@ def setup_otel(
             resource=resource,
             shutdown_on_exit=False,
         )
+        otel_metrics.set_meter_provider(meter_provider)
         metrics_adapter = OtelMetrics(meter_provider.get_meter(scope_name))
 
     if enable_tracing:
@@ -90,6 +93,7 @@ def setup_otel(
         tracer_provider.add_span_processor(
             BatchSpanProcessor(OTLPSpanExporter(endpoint=config.otel.traces_endpoint))
         )
+        otel_trace.set_tracer_provider(tracer_provider)
         tracer = OtelTracer(tracer_provider.get_tracer(scope_name))
 
     return OtelRuntime(
