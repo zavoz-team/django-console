@@ -19,17 +19,19 @@
                 <tr>
                     <th>Id</th>
                     <th>Name</th>
+                    <th>Description</th>
+                    <th>Active</th>
                     <th>Members</th>
-                    <th>Updated</th>
                 </tr>
             </thead>
             <tbody>
                 {% for row in rows %}
                 <tr>
-                    <td>{{ row.id }}</td>
+                    <td>{{ row.segment_id }}</td>
                     <td>{{ row.name }}</td>
+                    <td>{{ row.description }}</td>
+                    <td>{{ row.is_active }}</td>
                     <td>{{ row.members_count }}</td>
-                    <td>{{ row.updated_at }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

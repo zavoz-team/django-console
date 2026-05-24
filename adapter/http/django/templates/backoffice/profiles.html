@@ -18,20 +18,22 @@
             <thead>
                 <tr>
                     <th>Id</th>
-                    <th>Name</th>
                     <th>Email</th>
                     <th>Phone</th>
-                    <th>Updated</th>
+                    <th>Last Seen</th>
+                    <th>Orders</th>
+                    <th>Revenue</th>
                 </tr>
             </thead>
             <tbody>
                 {% for row in rows %}
                 <tr>
-                    <td><a href="{% url 'profile' row.id %}">{{ row.id }}</a></td>
-                    <td>{{ row.display_name }}</td>
+                    <td><a href="{% url 'profile' row.customer_id %}">{{ row.customer_id }}</a></td>
                     <td>{{ row.email }}</td>
                     <td>{{ row.phone }}</td>
-                    <td>{{ row.updated_at }}</td>
+                    <td>{{ row.last_seen_at }}</td>
+                    <td>{{ row.total_orders }}</td>
+                    <td>{{ row.total_revenue }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

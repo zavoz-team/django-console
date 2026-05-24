@@ -20,17 +20,17 @@
         {% if job %}
         <dl>
             <dt>Id</dt>
-            <dd>{{ job.id }}</dd>
+            <dd>{{ job.job_id }}</dd>
             <dt>Status</dt>
             <dd>{{ job.status }}</dd>
             <dt>Created</dt>
-            <dd>{{ job.created_at }}</dd>
+            <dd>{{ job.requested_at }}</dd>
             <dt>Finished</dt>
-            <dd>{{ job.finished_at }}</dd>
+            <dd>{{ job.completed_at }}</dd>
             <dt>Records</dt>
-            <dd>{{ job.records_count }}</dd>
+            <dd>{{ job.members_count }}</dd>
             <dt>Error</dt>
-            <dd>{{ job.error_code }}</dd>
+            <dd>{{ job.error_reason }}</dd>
         </dl>
         {% endif %}
     </main>

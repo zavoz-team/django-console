@@ -21,24 +21,28 @@
         <section>
             <dl>
                 <dt>Id</dt>
-                <dd>{{ profile.id }}</dd>
-                <dt>Name</dt>
-                <dd>{{ profile.display_name }}</dd>
-                <dt>Email</dt>
-                <dd>{{ profile.email }}</dd>
-                <dt>Phone</dt>
-                <dd>{{ profile.phone }}</dd>
-                <dt>Updated</dt>
-                <dd>{{ profile.updated_at }}</dd>
+                <dd>{{ profile.customer_id }}</dd>
+                <dt>Emails</dt>
+                <dd>{{ profile.emails|join:", " }}</dd>
+                <dt>Phones</dt>
+                <dd>{{ profile.phones|join:", " }}</dd>
+                <dt>Revenue</dt>
+                <dd>{{ profile.total_revenue }}</dd>
+                <dt>Currency</dt>
+                <dd>{{ profile.currency }}</dd>
+                <dt>Last Seen</dt>
+                <dd>{{ profile.last_seen_at }}</dd>
+                <dt>Segments</dt>
+                <dd>{{ profile.segments|join:", " }}</dd>
             </dl>
         </section>
         {% if profile.attributes %}
         <section>
             <h2>Attributes</h2>
             <dl>
-                {% for item in profile.attributes %}
-                <dt>{{ item.label }}</dt>
-                <dd>{{ item.value }}</dd>
+                {% for key, value in profile.attributes.items %}
+                <dt>{{ key }}</dt>
+                <dd>{{ value }}</dd>
                 {% endfor %}
             </dl>
         </section>

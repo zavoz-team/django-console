@@ -28,12 +28,12 @@
             <tbody>
                 {% for row in rows %}
                 <tr>
-                    <td>{{ row.id }}</td>
+                    <td>{{ row.job_id }}</td>
                     <td>{{ row.status }}</td>
-                    <td>{{ row.created_at }}</td>
-                    <td>{{ row.finished_at }}</td>
-                    <td>{{ row.records_count }}</td>
-                    <td>{{ row.error_code }}</td>
+                    <td>{{ row.requested_at }}</td>
+                    <td>{{ row.completed_at }}</td>
+                    <td>{{ row.members_count }}</td>
+                    <td>{{ row.error_reason }}</td>
                 </tr>
                 {% endfor %}
             </tbody>

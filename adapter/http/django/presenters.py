@@ -49,35 +49,40 @@ def detail_items(values: Mapping[str, str] | None = None) -> list[DetailItemView
 def profile_rows(items: list[ProfileSummary]) -> list[ProfileRowViewModel]:
     return [
         ProfileRowViewModel(
-            id=item.id,
-            display_name=item.display_name,
+            customer_id=item.customer_id,
             email=item.email or '',
             phone=item.phone or '',
-            updated_at=_format_datetime(item.updated_at),
+            last_seen_at=_format_datetime(item.last_seen_at),
+            external_user_id=item.external_user_id,
+            segments=item.segments,
+            total_orders=item.total_orders,
+            total_revenue=item.total_revenue,
         )
         for item in items
     ]
 
 
 def profile_detail(item: ProfileDetails) -> ProfileDetailViewModel:
-    attributes = item.attributes or {}
     return ProfileDetailViewModel(
-        id=item.id,
-        display_name=item.display_name,
-        email=item.email or '',
-        phone=item.phone or '',
-        updated_at=_format_datetime(item.updated_at),
-        attributes=detail_items(attributes),
+        customer_id=item.customer_id,
+        emails=item.identifiers.emails,
+        phones=item.identifiers.phones,
+        attributes=item.attributes or {},
+        total_revenue=item.total_revenue,
+        currency=item.currency,
+        last_seen_at=_format_datetime(item.timestamps.last_seen_at),
+        segments=item.segments,
     )
 
 
 def segment_rows(items: list[SegmentSummary]) -> list[SegmentRowViewModel]:
     return [
         SegmentRowViewModel(
-            id=item.id,
+            segment_id=item.segment_id,
             name=item.name,
+            description=item.description,
+            is_active=item.is_active,
             members_count=_format_optional_int(item.members_count),
-            updated_at=_format_datetime(item.updated_at),
         )
         for item in items
     ]
@@ -88,9 +93,10 @@ def segment_member_rows(
 ) -> list[SegmentMemberViewModel]:
     return [
         SegmentMemberViewModel(
+            customer_id=item.customer_id,
             segment_id=item.segment_id,
-            profile_id=item.profile_id,
-            added_at=_format_datetime(item.added_at),
+            email=item.email,
+            phone=item.phone,
         )
         for item in items
     ]
@@ -102,12 +108,14 @@ def job_rows(items: list[ExportJobSummary]) -> list[JobRowViewModel]:
 
 def job_row(item: ExportJobSummary) -> JobRowViewModel:
     return JobRowViewModel(
-        id=item.id,
+        job_id=item.job_id,
+        segment_id=item.segment_id,
         status=_format_value(item.status),
-        created_at=_format_datetime(item.created_at),
-        finished_at=_format_datetime(item.finished_at),
-        records_count=_format_optional_int(item.records_count),
-        error_code=item.error_code or '',
+        requested_at=_format_datetime(item.requested_at),
+        completed_at=_format_datetime(item.completed_at),
+        members_count=_format_optional_int(item.members_count),
+        error_reason=item.error_reason or '',
+        requested_by=item.requested_by,
     )
 
 

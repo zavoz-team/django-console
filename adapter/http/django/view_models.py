@@ -14,46 +14,55 @@ class DetailItemViewModel:
 
 @dataclass(frozen=True, slots=True)
 class ProfileRowViewModel:
-    id: str
-    display_name: str
+    customer_id: str
     email: str
     phone: str
-    updated_at: str
+    last_seen_at: str
+    external_user_id: str | None
+    segments: list[str]
+    total_orders: int
+    total_revenue: float
 
 
 @dataclass(frozen=True, slots=True)
 class ProfileDetailViewModel:
-    id: str
-    display_name: str
-    email: str
-    phone: str
-    updated_at: str
-    attributes: list[DetailItemViewModel]
+    customer_id: str
+    emails: list[str]
+    phones: list[str]
+    attributes: dict
+    total_revenue: float
+    currency: str | None
+    last_seen_at: str | None
+    segments: list[str]
 
 
 @dataclass(frozen=True, slots=True)
 class SegmentRowViewModel:
-    id: str
+    segment_id: str
     name: str
+    description: str
+    is_active: bool
     members_count: str
-    updated_at: str
 
 
 @dataclass(frozen=True, slots=True)
 class SegmentMemberViewModel:
+    customer_id: str
     segment_id: str
-    profile_id: str
-    added_at: str
+    email: str | None
+    phone: str | None
 
 
 @dataclass(frozen=True, slots=True)
 class JobRowViewModel:
-    id: str
+    job_id: str
+    segment_id: str
     status: str
-    created_at: str
-    finished_at: str
-    records_count: str
-    error_code: str
+    requested_at: str
+    completed_at: str
+    members_count: str
+    error_reason: str
+    requested_by: str | None
 
 
 @dataclass(frozen=True, slots=True)
