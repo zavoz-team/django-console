@@ -1,8 +1,9 @@
 services:
-  app:
+  django-console:
     image: gglamer/django-console:latest
     depends_on:
-      - otel-collector
+      otel-collector:
+        condition: service_started
     environment:
       APP_API_TOKEN: ${APP_API_TOKEN:?APP_API_TOKEN is required}
       APP_SIGNING_KEY: ${APP_SIGNING_KEY:?APP_SIGNING_KEY is required}
@@ -12,7 +13,7 @@ services:
       APP_HTTP_HOST: 0.0.0.0
       APP_HTTP_PORT: '8123'
       APP_DB_ENGINE: sqlite
-      APP_DB_NAME: db.sqlite3
+      APP_DB_NAME: var/db.sqlite3
       APP_LOGGING_LEVEL: INFO
       APP_LOGGING_OUTPUT: otel
       APP_LOGGING_FORMAT: json
@@ -24,12 +25,17 @@ services:
       APP_OTEL_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
       OTEL_METRIC_EXPORT_INTERVAL: '1000'
       APP_API_TOKEN_HEADER: X-API-Token
-      DJANGO_SUPERUSER_USERNAME: gglamer
-      DJANGO_SUPERUSER_EMAIL: aza@ya.ru
-      DJANGO_SUPERUSER_PASSWORD: 123
+      APP_CORE_API_BASE_URL: http://cdp-core-api:8000
+      DJANGO_SUPERUSER_USERNAME: ${DJANGO_SUPERUSER_USERNAME:-admin}
+      DJANGO_SUPERUSER_EMAIL: ${DJANGO_SUPERUSER_EMAIL:-admin@example.com}
+      DJANGO_SUPERUSER_PASSWORD: ${DJANGO_SUPERUSER_PASSWORD:?DJANGO_SUPERUSER_PASSWORD is required}
       DJANGO_SETTINGS_MODULE: adapter.http.django.settings
     ports:
       - '127.0.0.1:8123:8123'
+    volumes:
+      - django-console-data:/app/var
+    networks:
+      - web-python-net
 
   otel-collector:
     image: grafana/otel-lgtm:latest
@@ -37,6 +43,14 @@ services:
       - '127.0.0.1:3000:3000'
     volumes:
       - lgtm-data:/data
+    networks:
+      - web-python-net
+
+networks:
+  web-python-net:
+    driver: bridge
 
 volumes:
   lgtm-data:
+  django-console-data:
+    driver: local
