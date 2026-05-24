@@ -10,7 +10,8 @@ from usecase.interface import AuditLogRepository, ExportGateway, Logger, Tracer
 @dataclass(frozen=True, slots=True)
 class TriggerExportQuery:
     segment_id: str
-    destination: str
+    destination_type: str
+    destination_url: str
     actor_email: str
     actor_id: str | None = None
     trace_id: str | None = None
@@ -39,13 +40,16 @@ class TriggerExport:
             'usecase.trigger_export',
             attrs={
                 'segment.id': query.segment_id,
-                'export.destination': query.destination,
+                'export.destination_type': query.destination_type,
+                'export.destination_url': query.destination_url,
             },
         ) as span:
             try:
                 job = self._gateway.trigger_export(
                     segment_id=query.segment_id,
-                    destination=query.destination,
+                    destination_type=query.destination_type,
+                    destination_url=query.destination_url,
+                    requested_by=query.actor_email,
                 )
             except Exception as exc:
                 self._audit_log_repository.save(
@@ -57,7 +61,8 @@ class TriggerExport:
                         target_id=query.segment_id,
                         status='failed',
                         payload_json={
-                            'destination': query.destination,
+                            'destination_type': query.destination_type,
+                            'destination_url': query.destination_url,
                             'actor_id': query.actor_id or '',
                             'error': str(exc),
                         },
@@ -81,14 +86,15 @@ class TriggerExport:
                     target_id=query.segment_id,
                     status='success',
                     payload_json={
-                        'destination': query.destination,
+                        'destination_type': query.destination_type,
+                        'destination_url': query.destination_url,
                         'actor_id': query.actor_id or '',
-                        'export_job_id': job.id,
+                        'export_job_id': job.job_id,
                     },
                     trace_id=query.trace_id,
                 )
             )
-            span.set_attribute('export_job.id', job.id)
+            span.set_attribute('export_job.id', job.job_id)
             return job
 
 

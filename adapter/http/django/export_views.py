@@ -28,7 +28,8 @@ def exports_create_page(request: HttpRequest) -> HttpResponse:
             job = get_container().usecases.trigger_export.execute(
                 TriggerExportQuery(
                     segment_id=form.cleaned_data['segment_id'],
-                    destination=form.cleaned_data['destination'],
+                    destination_type=form.cleaned_data['destination_type'],
+                    destination_url=form.cleaned_data['destination_url'],
                     actor_email=actor_email,
                     actor_id=(
                         str(request.user.pk) if request.user.pk is not None else None

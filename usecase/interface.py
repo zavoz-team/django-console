@@ -106,6 +106,12 @@ class SegmentGateway(Protocol):
 
 
 class ExportGateway(Protocol):
-    def trigger_export(self, segment_id: str, destination: str) -> ExportJobSummary: ...
+    def trigger_export(
+        self,
+        segment_id: str,
+        destination_type: str,
+        destination_url: str,
+        requested_by: str | None = None,
+    ) -> ExportJobSummary: ...
 
     def list_jobs(self, pagination: Pagination) -> list[ExportJobSummary]: ...

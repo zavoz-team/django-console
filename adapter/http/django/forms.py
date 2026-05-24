@@ -43,4 +43,5 @@ class AuditFilterForm(PaginationForm):
 
 class ExportCreateForm(forms.Form):
     segment_id = forms.CharField(strip=True)
-    destination = forms.CharField(strip=True)
+    destination_type = forms.CharField(strip=True)
+    destination_url = forms.CharField(strip=True)
