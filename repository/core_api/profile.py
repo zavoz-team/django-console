@@ -33,7 +33,7 @@ class CoreApiProfileGateway(ProfileGateway):
                     external_user_id=item.get("external_user_id"),
                     segments=item.get("segments", []),
                     total_orders=item.get("total_orders", 0),
-                    total_revenue=item.get("total_revenue", 0.0),
+                    total_revenue=float(item.get("total_revenue", 0.0)),
                     last_seen_at=item.get("last_seen_at"),
                 )
             )
