@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from datetime import datetime
 from enum import Enum
 
 
@@ -12,9 +11,11 @@ class ExportJobStatus(str, Enum):
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class ExportJobSummary:
-    id: str
+    job_id: str
+    segment_id: str
     status: ExportJobStatus
-    created_at: datetime
-    finished_at: datetime | None = None
-    records_count: int | None = None
-    error_code: str | None = None
+    requested_at: str
+    completed_at: str | None = None
+    members_count: int | None = None
+    error_reason: str | None = None
+    requested_by: str | None = None

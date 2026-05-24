@@ -1,17 +1,19 @@
 from dataclasses import dataclass
-from datetime import datetime
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class SegmentSummary:
-    id: str
+    segment_id: str
     name: str
+    description: str
+    is_active: bool
     members_count: int | None = None
-    updated_at: datetime | None = None
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
 class SegmentMember:
     segment_id: str
-    profile_id: str
-    added_at: datetime | None = None
+    customer_id: str
+    email: str | None = None
+    phone: str | None = None
+    external_user_id: str | None = None
