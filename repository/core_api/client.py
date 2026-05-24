@@ -3,6 +3,7 @@ import time
 from typing import Any, Optional
 
 import httpx
+from opentelemetry.propagate import inject
 
 from adapter.config.model import CoreApiConfig
 from repository.core_api.errors import (
@@ -52,6 +53,9 @@ class CoreApiClient:
             request_headers = self._client.headers.copy()
             if extra_headers:
                 request_headers.update(extra_headers)
+            carrier: dict[str, str] = {}
+            inject(carrier)
+            request_headers.update(carrier)
 
             while True:
                 attempts += 1
