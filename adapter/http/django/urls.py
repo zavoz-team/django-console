@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import path
+from django.views.generic import RedirectView
 
 from .auth_views import login_view, logout_view
 from .audit_views import audit_page
@@ -11,6 +12,7 @@ from .segment_views import segment_members_page, segments_page
 from .views import health
 
 public_urlpatterns = [
+    path('', RedirectView.as_view(url='/login/', permanent=False)),
     path('login/', login_view, name='login'),
     path('logout/', logout_view, name='logout'),
     path('api/v1/health', health, name='health'),
