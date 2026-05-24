@@ -15,9 +15,16 @@ class CoreApiSegmentGateway(SegmentGateway):
         )
 
         segments = []
-        if isinstance(response_data, list):
-            for item in response_data:
-                segments.append(SegmentSummary(**item))
+        for item in response_data.get("items", []):
+            segments.append(
+                SegmentSummary(
+                    segment_id=item["segment_id"],
+                    name=item["name"],
+                    description=item.get("description", ""),
+                    is_active=item.get("is_active", True),
+                    members_count=item.get("members_count"),
+                )
+            )
 
         return segments
 
@@ -31,9 +38,17 @@ class CoreApiSegmentGateway(SegmentGateway):
         except CoreApiNotFoundError:
             return None
 
+        resolved_segment_id = response_data.get("segment_id", segment_id)
         members = []
-        if isinstance(response_data, list):
-            for item in response_data:
-                members.append(SegmentMember(**item))
+        for item in response_data.get("items", []):
+            members.append(
+                SegmentMember(
+                    segment_id=resolved_segment_id,
+                    customer_id=item["customer_id"],
+                    email=item.get("email"),
+                    phone=item.get("phone"),
+                    external_user_id=item.get("external_user_id"),
+                )
+            )
 
         return members
