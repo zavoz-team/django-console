@@ -173,9 +173,11 @@ def audit_row(entry: AuditEntry) -> AuditEntryViewModel:
     )
 
 
-def _format_datetime(value: datetime | None) -> str:
+def _format_datetime(value: datetime | str | None) -> str:
     if value is None:
         return ''
+    if isinstance(value, str):
+        return value
     return value.isoformat()
 
 
