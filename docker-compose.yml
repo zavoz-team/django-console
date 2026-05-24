@@ -1,9 +1,6 @@
 services:
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: run
+    image: gglamer/django-console:latest
     depends_on:
       - otel-collector
     environment:

@@ -37,4 +37,4 @@ USER appuser
 
 EXPOSE 8123
 
-ENTRYPOINT /app/entrypoint.sh
+ENTRYPOINT ["/app/entrypoint.sh"]
